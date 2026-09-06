@@ -4,13 +4,13 @@
 	<p><strong>School Clinic Management System</strong></p>
 	<p>A secure health information workspace for Brokenshire College in Davao City.</p>
 
-	<p>
-		<a href="docs/architecture.md">Architecture</a> ·
-		<a href="docs/api.md">API Docs</a> ·
-		<a href="docs/database.md">Database</a> ·
-		<a href="docs/security.md">Security</a> ·
-		<a href="docs/development.md">Development</a>
-	</p>
+  <p>
+    <a href="docs/architecture.md">Architecture</a> ·
+    <a href="docs/api.md">API Docs</a> ·
+    <a href="docs/database.md">Database</a> ·
+    <a href="docs/security.md">Security</a> ·
+    <a href="docs/development.md">Development</a>
+  </p>
 </div>
 
 ## Overview
