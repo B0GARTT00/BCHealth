@@ -1,56 +1,64 @@
-import { Bell, CalendarDays, ClipboardList, FileText, LayoutDashboard, LogOut, Package, Search, ShieldCheck, Users } from 'lucide-react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { Bell, CalendarDays, ClipboardList, LayoutDashboard, LogOut, Package, Search, ShieldCheck, Users, Settings, FileCheck, Syringe, Stethoscope, ClipboardPlus, BarChart3, UserCog, GraduationCap, ScrollText, Megaphone, Inbox } from 'lucide-react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/patients', label: 'Patients', icon: Users },
-  { to: '/clinic/visits', label: 'Clinic Visits', icon: ClipboardList },
-  { to: '/appointments', label: 'Appointments', icon: CalendarDays },
-  { to: '/inventory', label: 'Inventory', icon: Package },
-  { to: '/reports', label: 'Reports', icon: FileText },
+  { group: 'Workspace', to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { group: 'Clinic', to: '/patients', label: 'Patients', icon: Users },
+  { group: 'Clinic', to: '/clinic/visits', label: 'Clinic Visits', icon: ClipboardList },
+  { group: 'Clinic', to: '/appointments', label: 'Appointments', icon: CalendarDays },
+  { group: 'Health records', to: '/requirements', label: 'Requirements', icon: ClipboardPlus },
+  { group: 'Health records', to: '/clearances', label: 'Clearances', icon: FileCheck },
+  { group: 'Health records', to: '/vaccinations', label: 'Vaccinations', icon: Syringe },
+  { group: 'Health records', to: '/certificates', label: 'Certificates', icon: Stethoscope },
+  { group: 'Inventory', to: '/inventory/medicines', label: 'Medicines', icon: Package },
+  { group: 'Inventory', to: '/inventory/dispensing', label: 'Dispensing', icon: ClipboardList },
+  { group: 'Insights', to: '/reports', label: 'Reports', icon: BarChart3 },
+  { group: 'Communication', to: '/announcements', label: 'Announcements', icon: Megaphone },
+  { group: 'Communication', to: '/notifications', label: 'Notifications', icon: Inbox },
+  { group: 'Administration', to: '/admin/users', label: 'Users', icon: UserCog },
+  { group: 'Administration', to: '/admin/academic-years', label: 'Academic Years', icon: GraduationCap },
+  { group: 'Administration', to: '/admin/audit-logs', label: 'Audit Logs', icon: ScrollText },
+  { group: 'Administration', to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 export function AppLayout() {
   const auth = useAuth();
+  const location = useLocation();
+  const currentPage = navItems.find((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))?.label ?? (location.pathname.startsWith('/patients/') ? 'Patient Profile' : 'Dashboard');
 
   return (
     <div className="min-h-screen bg-clinic-surface text-clinic-ink">
-      <aside className="fixed inset-y-0 left-0 hidden w-[280px] bg-[var(--color-sidebar-bg)] text-slate-300 md:block">
-        <div className="flex h-20 items-center gap-3 border-b border-white/10 px-7">
-          <div className="grid h-8 w-8 place-items-center rounded-xl bg-brokenshire-600 text-sm font-bold text-white">B</div>
+      <aside className="fixed inset-y-0 left-0 hidden h-screen w-[280px] flex-col bg-[var(--color-sidebar-bg)] text-slate-300 md:flex">
+        <div className="flex h-[68px] shrink-0 items-center gap-2.5 border-b border-white/10 px-4">
+          <img src="/BC_logo.png" alt="Brokenshire College seal" width="34" height="34" className="h-[34px] w-[34px] rounded-full object-contain ring-1 ring-white/20" />
           <div>
-            <p className="font-semibold tracking-tight text-white">BCHealth</p>
-            <p className="text-[11px] text-slate-500">Davao University Clinic</p>
+            <p className="text-[15px] font-semibold tracking-tight text-white">BCHealth</p>
+            <p className="text-[11px] text-slate-400">Davao University Clinic</p>
           </div>
         </div>
-        <nav className="space-y-1 px-4 py-6">
-          <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">Workspace</p>
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
-                  isActive ? 'bg-white text-slate-950 shadow-sm before:absolute before:left-0 before:h-5 before:w-0.5 before:rounded-full before:bg-brokenshire-600' : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                }`
-              }
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </NavLink>
+        <nav className="sidebar-navigation min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-2.5 py-4">
+          {['Workspace', 'Clinic', 'Health records', 'Inventory', 'Insights', 'Communication', 'Administration'].map((group) => (
+            <div key={group} className="space-y-1">
+              <p className="mb-1.5 px-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-50/75">{group}</p>
+              {navItems.filter((item) => item.group === group).map((item) => (
+                <NavLink key={item.to} to={item.to} className={({ isActive }) => `relative flex h-10 items-center gap-3 rounded-lg px-3 text-[13px] font-semibold transition-colors ${isActive ? 'bg-white text-slate-950 shadow-sm before:absolute before:left-0 before:h-5 before:w-0.5 before:rounded-full before:bg-brokenshire-600' : 'text-white/90 hover:bg-white/10 hover:text-white'}`}>
+                  <item.icon className="h-4 w-4 shrink-0" />{item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
-        <div className="absolute bottom-5 left-4 right-4 rounded-xl border border-white/10 bg-white/[0.04] p-3">
-          <div className="flex items-center gap-2 text-[11px] text-slate-400"><ShieldCheck className="h-3.5 w-3.5 text-emerald-400" /> Protected workspace</div>
-          <p className="mt-1 pl-5 text-[10px] text-slate-600">Audit logging enabled</p>
+        <div className="mx-2.5 mb-3 mt-2 shrink-0 rounded-lg border border-white/10 bg-white/[0.08] p-2.5">
+          <div className="flex items-center gap-2 text-[11px] text-emerald-50/85"><ShieldCheck className="h-4 w-4 text-emerald-200" /> Protected workspace</div>
+          <p className="mt-1 pl-6 text-[10px] text-emerald-100/55">Audit logging enabled</p>
         </div>
       </aside>
 
       <div className="md:pl-[280px]">
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-slate-200/80 bg-white/90 px-5 backdrop-blur md:px-8">
           <div className="flex items-center gap-2 text-[12px] text-slate-500">
-            <span>Clinic</span><span className="text-slate-300">/</span><span className="font-medium text-slate-900">Dashboard</span>
+            <span>Clinic</span><span className="text-slate-300">/</span><span className="font-medium text-slate-900">{currentPage}</span>
           </div>
           <div className="flex items-center gap-2">
             <button className="hidden h-8 items-center gap-2 rounded-lg border border-slate-200 px-2.5 text-[11px] text-slate-500 hover:bg-slate-50 sm:flex" aria-label="Search patients">

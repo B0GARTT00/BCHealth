@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider } from '../hooks/useAuth';
 import { LoginPage } from './LoginPage';
 
@@ -21,6 +21,8 @@ vi.mock('../services/api', () => ({
   logout: vi.fn(),
 }));
 
+afterEach(() => cleanup());
+
 describe('LoginPage', () => {
   it('submits valid login credentials', async () => {
     render(
@@ -36,5 +38,22 @@ describe('LoginPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(await screen.findByRole('button', { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  it('toggles password visibility without changing the submitted field', async () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <AuthProvider>
+            <LoginPage />
+          </AuthProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const password = screen.getByLabelText('Password');
+    expect(password).toHaveAttribute('type', 'password');
+    await userEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(password).toHaveAttribute('type', 'text');
   });
 });

@@ -1,6 +1,25 @@
 import axios from 'axios';
 import type { ApiEnvelope, ApiHealth, AuthSession } from '@bchealth/types';
 
+export type Patient = {
+  id: string;
+  patientNumber: string;
+  type: 'STUDENT' | 'FACULTY' | 'STAFF';
+  firstName: string;
+  middleName?: string | null;
+  lastName: string;
+  email?: string | null;
+  phone?: string | null;
+  birthDate?: string | null;
+  sex?: string | null;
+  studentProfile?: { studentId: string; program: string; yearLevel?: number | null; section?: string | null } | null;
+  employeeProfile?: { employeeId: string; department: string; position?: string | null } | null;
+  allergies?: { id: string; allergen: string; reaction?: string | null; severity?: string | null; isActive: boolean }[];
+  conditions?: { id: string; name: string; isActive: boolean }[];
+  emergencyContacts?: { id: string; name: string; relationship: string; phone: string }[];
+  visits?: { id: string; visitDate: string; chiefComplaint?: string | null; status: string }[];
+};
+
 const ACCESS_TOKEN_KEY = 'bchealth.accessToken';
 const REFRESH_TOKEN_KEY = 'bchealth.refreshToken';
 
@@ -67,6 +86,42 @@ export async function logout() {
 
 export async function getCurrentUser() {
   const response = await api.get<AuthSession['user']>('/auth/me');
+  return response.data;
+}
+
+export async function getPatients(search?: string, page = 1, limit = 20, type?: Patient['type']) {
+  const response = await api.get<Patient[]>('/patients', { params: { search, page, limit, type } });
+  return response.data;
+}
+
+export async function getPatient(id: string) {
+  const response = await api.get<Patient>(`/patients/${id}`);
+  return response.data;
+}
+
+export type PatientInput = {
+  patientNumber: string;
+  type: Patient['type'];
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  suffix?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  sex?: string;
+  program?: string;
+  department?: string;
+  yearLevel?: number;
+};
+
+export async function createPatient(data: PatientInput) {
+  const response = await api.post<Patient>('/patients', data);
+  return response.data;
+}
+
+export async function updatePatient(id: string, data: Partial<PatientInput>) {
+  const response = await api.patch<Patient>(`/patients/${id}`, data);
   return response.data;
 }
 

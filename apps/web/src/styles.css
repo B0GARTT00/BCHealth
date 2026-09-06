@@ -5,7 +5,7 @@
 :root {
   --color-app-bg: #f8fafb;
   --color-card-bg: #ffffff;
-  --color-sidebar-bg: #053d30;
+  --color-sidebar-bg: #075c4d;
   --color-sidebar-active: #006a4e;
   --color-input-bg: #ffffff;
   --color-hover-bg: #f1f5f4;
@@ -42,3 +42,49 @@ body {
 }
 
 button, input, select { font: inherit; }
+
+.login-backdrop {
+  background-image: url('/bc-login.jpg');
+  background-position: center;
+  background-size: cover;
+  filter: saturate(0.78) contrast(1.06);
+}
+
+.login-scrim {
+  background: radial-gradient(ellipse at 50% 45%, rgba(0, 106, 78, 0.18), transparent 48%), linear-gradient(115deg, rgba(5, 61, 48, 0.72), rgba(0, 106, 78, 0.35) 48%, rgba(3, 48, 38, 0.78));
+}
+
+.login-visual { background: #006a4e; }
+
+.login-card { box-shadow: 0 24px 64px rgba(3, 36, 29, 0.28), 0 4px 16px rgba(3, 36, 29, 0.1); }
+.login-card { background: rgba(5, 61, 48, 0.5); border-color: rgba(255, 255, 255, 0.42); box-shadow: 0 24px 64px rgba(2, 28, 23, 0.38), 0 4px 16px rgba(2, 28, 23, 0.18); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+.login-input { background: rgba(255, 255, 255, 0.96); color: #1f2b27; border: 1px solid rgba(255, 255, 255, 0.75); }
+
+@media (max-width: 1023px) {
+  .login-page { background: #f8fafb; }
+  .login-backdrop { height: 34vh; }
+  .login-scrim { height: 34vh; background: linear-gradient(180deg, rgba(0, 106, 78, 0.38), rgba(5, 61, 48, 0.88)); }
+  .login-card { margin-top: 18vh; }
+}
+
+.brand-button {
+  background: var(--color-brand-primary);
+  box-shadow: 0 4px 12px rgba(0, 106, 78, 0.2);
+}
+
+.brand-button:hover { background: var(--color-brand-primary-hover); }
+
+.field-label { display: block; margin-bottom: 0.375rem; color: var(--color-text-muted); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.field-label b { color: #c94a52; }
+.field-input { width: 100%; height: 2.5rem; border: 1px solid var(--color-border-strong); border-radius: 0.75rem; background: #fff; padding: 0 0.75rem; color: var(--color-text-primary); font-size: 0.8125rem; outline: none; }
+.field-input:focus { border-color: var(--color-brand-primary); box-shadow: 0 0 0 3px rgba(0, 106, 78, 0.12); }
+
+.sidebar-navigation {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.sidebar-navigation::-webkit-scrollbar { width: 5px; }
+.sidebar-navigation::-webkit-scrollbar-track { background: transparent; }
+.sidebar-navigation::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.22); border-radius: 999px; }
+.sidebar-navigation::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.36); }

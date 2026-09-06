@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Activity, AlertTriangle, ArrowUpRight, CalendarCheck, ClipboardCheck, Clock3, UserRound } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowUpRight, Clock3, UserRound } from 'lucide-react';
 import { getHealth } from '../services/api';
+import { Card } from '../components/ui/card';
+import { EmptyState } from '../components/ui/States';
 
 const cards = [
   { label: "Today's visits", value: '24', icon: Activity, tone: 'text-brokenshire-600', change: '+12%' },
@@ -17,7 +19,8 @@ export function DashboardPage() {
       <section>
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-600">Monday, 06 September 2026</p>
         <h2 className="mt-1 text-[22px] font-semibold tracking-tight">Clinic Dashboard</h2>
-        <p className="mt-1 text-[13px] text-slate-500">A quiet view of today&apos;s clinical operations.</p>
+        <p className="mt-1 text-[13px] text-slate-500">Here&apos;s what&apos;s happening in the clinic today.</p>
+        <p className="mt-2 text-[11px] text-medical-400">Operational figures shown as development preview data until their API modules are connected.</p>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -41,6 +44,12 @@ export function DashboardPage() {
           <div className="border-b border-slate-100 px-5 py-4"><p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">System status</p><p className="mt-1 text-[13px] text-slate-500">Secure services overview</p></div>
           <div className="space-y-3 p-5"><div className="flex items-center justify-between text-[13px]"><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500" /> API service</span><span className="text-slate-500">{health.isLoading ? 'Checking...' : health.data?.status === 'ok' ? 'Online' : 'Unavailable'}</span></div><div className="flex items-center justify-between text-[13px]"><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Audit logging</span><span className="text-emerald-600">Enabled</span></div><div className="flex items-center gap-2 border-t border-slate-100 pt-3 text-[11px] text-slate-400"><UserRound className="h-3.5 w-3.5" /> Authorized staff only</div></div>
         </section>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card title="Upcoming appointments" description="Scheduled clinic visits"><EmptyState title="No upcoming appointments" description="Appointment data will appear here when the scheduling module is connected." /></Card>
+        <Card title="Inventory alerts" description="Stock and expiry attention"><EmptyState title="No inventory alerts available" description="Inventory data will appear here when the medicines module is connected." /></Card>
+        <Card title="Pending requirements" description="Records requiring attention"><EmptyState title="No requirement data available" description="Requirement submissions will appear here when the records module is connected." /></Card>
+        <Card title="Recent activity" description="Audited staff activity"><EmptyState title="No recent activity available" description="Activity summaries will appear here once audit activity is connected." /></Card>
       </div>
     </div>
   );

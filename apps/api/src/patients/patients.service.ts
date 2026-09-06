@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { PatientType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreatePatientDto } from './dto';
+import { CreatePatientDto, UpdatePatientDto } from './dto';
 
 @Injectable()
 export class PatientsService {
@@ -9,7 +9,14 @@ export class PatientsService {
 
   async create(dto: CreatePatientDto) {
     try {
-      return await this.prisma.patient.create({ data: dto });
+      const { program, yearLevel, department, ...patientData } = dto;
+      return await this.prisma.patient.create({
+        data: {
+          ...patientData,
+          studentProfile: dto.type === 'STUDENT' && program ? { create: { studentId: dto.patientNumber, program, yearLevel } } : undefined,
+          employeeProfile: dto.type !== 'STUDENT' && department ? { create: { employeeId: dto.patientNumber, department } } : undefined,
+        },
+      });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new ConflictException('A patient with this ID or email already exists.');
@@ -18,7 +25,18 @@ export class PatientsService {
     }
   }
 
-  findAll(search?: string, page = 1, limit = 20) {
+  async update(id: string, dto: UpdatePatientDto) {
+    try {
+      return await this.prisma.patient.update({ where: { id }, data: dto });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('A patient with this ID or email already exists.');
+      }
+      throw error;
+    }
+  }
+
+  findAll(search?: string, page = 1, limit = 20, type?: PatientType) {
     const where = search
       ? {
           OR: [
@@ -28,8 +46,9 @@ export class PatientsService {
             { email: { contains: search } },
           ],
           deletedAt: null,
+          type,
         }
-      : { deletedAt: null };
+      : { deletedAt: null, type };
 
     return this.prisma.patient.findMany({
       where,

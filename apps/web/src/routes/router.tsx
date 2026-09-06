@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '../layouts/AppLayout';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LoginPage } from '../pages/LoginPage';
+import { PatientsPage } from '../pages/PatientsPage';
+import { PatientProfilePage } from '../pages/PatientProfilePage';
 import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -15,8 +17,8 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
-          { path: '/patients', element: <PlaceholderPage title="Patients" /> },
-          { path: '/patients/:id', element: <PlaceholderPage title="Patient Profile" /> },
+          { path: '/patients', element: <PatientsPage /> },
+          { path: '/patients/:id', element: <PatientProfilePage /> },
           { path: '/clinic/visits', element: <PlaceholderPage title="Clinic Visits" /> },
           { path: '/clinic/visits/new', element: <PlaceholderPage title="New Clinic Visit" /> },
           { path: '/appointments', element: <PlaceholderPage title="Appointments" /> },
@@ -29,6 +31,7 @@ export const router = createBrowserRouter([
           { path: '/inventory/dispensing', element: <PlaceholderPage title="Medicine Dispensing" /> },
           { path: '/emergencies', element: <PlaceholderPage title="Emergencies" /> },
           { path: '/certificates', element: <PlaceholderPage title="Certificates" /> },
+          { path: '/vaccinations', element: <PlaceholderPage title="Vaccinations" /> },
           { path: '/reports', element: <PlaceholderPage title="Reports" /> },
           { path: '/notifications', element: <PlaceholderPage title="Notifications" /> },
           { path: '/announcements', element: <PlaceholderPage title="Announcements" /> },
@@ -36,6 +39,7 @@ export const router = createBrowserRouter([
           { path: '/admin/roles', element: <PlaceholderPage title="Roles" /> },
           { path: '/admin/academic-years', element: <PlaceholderPage title="Academic Years" /> },
           { path: '/admin/audit-logs', element: <PlaceholderPage title="Audit Logs" /> },
+          { path: '/admin/settings', element: <PlaceholderPage title="Settings" /> },
         ],
       },
     ],
