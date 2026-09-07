@@ -316,7 +316,6 @@ model VitalSign {
   oxygenSaturation Int?
   heightCm         Decimal?    @db.Decimal(5, 2)
   weightKg         Decimal?    @db.Decimal(5, 2)
-  recordedById     String?
   recordedAt       DateTime    @default(now())
 }
 
