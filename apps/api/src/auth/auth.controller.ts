@@ -4,7 +4,9 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
-import { LoginDto, LogoutDto, RefreshDto } from './dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 type AuthenticatedRequest = Request & {
   user: { id: string };
@@ -21,16 +23,21 @@ export class AuthController {
     return this.auth.login(dto);
   }
 
+  @Post('register')
+  register(@Body() dto: RegisterDto) {
+    return this.auth.register(dto);
+  }
+
   @Post('refresh')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  refresh(@Body() dto: RefreshDto) {
+  refresh(@Body() dto: RefreshTokenDto) {
     return this.auth.refresh(dto.refreshToken);
   }
 
   @Post('logout')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
-  logout(@Body() dto: LogoutDto, @Req() request: AuthenticatedRequest) {
+  logout(@Body() dto: RefreshTokenDto, @Req() request: AuthenticatedRequest) {
     return this.auth.logout(dto.refreshToken, request.user.id);
   }
 

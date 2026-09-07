@@ -110,7 +110,7 @@ async function main() {
       lastName: 'Student',
       email: 'student.demo@bchealth.local',
       birthDate: new Date('2006-05-12'),
-      sex: 'Female',
+      sex: 'FEMALE',
       studentProfile: { create: { studentId: '2026-0001', program: 'BS Information Technology', yearLevel: 1 } },
       emergencyContacts: { create: { name: 'Demo Guardian', relationship: 'Parent', phone: '+63 900 000 0000' } },
     },

@@ -1,14 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { RefreshToken, User } from '@prisma/client';
+import { RefreshToken, Role, User, UserRole } from '@prisma/client';
 import argon2 from 'argon2';
 import bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import { LoginDto } from './dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 type AuthUser = User & {
-  roles: { role: { name: string } }[];
+  roles: (UserRole & { role: Role })[];
 };
 
 type JwtPayload = {
@@ -26,13 +27,44 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
+  async register(dto: RegisterDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (existing) {
+      throw new BadRequestException('Email already in use.');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        passwordHash,
+        displayName: dto.displayName,
+        status: 'ACTIVE',
+      },
+      include: { roles: { include: { role: true } } },
+    }) as AuthUser;
+
+    const session = await this.createSession(user);
+
+    await this.prisma.auditLog.create({
+      data: { actorId: user.id, action: 'CREATE', entity: 'User', entityId: user.id },
+    });
+
+    return {
+      ...session,
+      user: this.toSafeUser(user),
+    };
+  }
+
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       include: { roles: { include: { role: true } } },
-    });
+    }) as AuthUser | null;
 
-    if (!user?.isActive) throw new UnauthorizedException('Invalid credentials.');
+    if (user?.status !== 'ACTIVE') throw new UnauthorizedException('Invalid credentials.');
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid credentials.');
@@ -65,8 +97,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: { roles: { include: { role: true } } },
-    });
-    if (!user?.isActive) throw new UnauthorizedException('Invalid refresh token.');
+    }) as AuthUser | null;
+
+    if (user?.status !== 'ACTIVE') throw new UnauthorizedException('Invalid refresh token.');
 
     await this.prisma.refreshToken.update({
       where: { id: storedToken.id },
@@ -109,8 +142,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { roles: { include: { role: true } } },
-    });
-    if (!user?.isActive) throw new UnauthorizedException('User is inactive.');
+    }) as AuthUser | null;
+
+    if (user?.status !== 'ACTIVE') throw new UnauthorizedException('User is inactive.');
     return this.toSafeUser(user);
   }
 
