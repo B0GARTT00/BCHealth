@@ -143,6 +143,7 @@ enum AuditAction {
   DELETE
   LOGIN
   LOGOUT
+  LOGIN_FAILED
   APPROVE
   REJECT
   DISPENSE
@@ -155,7 +156,11 @@ enum AuditAction {
   UPDATE_USER
   DELETE_USER
   ASSIGN_ROLE
-  CHANGE_ROLE
+  ROLE_CHANGE
+  STATUS_CHANGE
+  PASSWORD_CHANGE
+  PASSWORD_RESET
+  OTHER
 }
 
 model User {
@@ -250,6 +255,8 @@ model AuditLog {
   action    AuditAction
   entity    String
   entityId  String?
+  oldValue  Json?
+  newValue  Json?
   ipAddress String?
   userAgent String?
   metadata  Json?
@@ -257,6 +264,8 @@ model AuditLog {
 
   @@index([actorId, createdAt])
   @@index([entity, entityId])
+  @@index([action, createdAt])
+  @@index([entity, entityId, createdAt])
 }
 
 model Patient {

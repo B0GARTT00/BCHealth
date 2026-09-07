@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
+import { AuditInterceptor } from './modules/audit/interceptors/audit.interceptor';
 
 function ensureDatabaseUrl() {
   if (!process.env.DATABASE_URL) {
@@ -41,6 +42,8 @@ async function bootstrap() {
     origin: config.get<string>('corsOrigin') || 'http://localhost:5173',
     credentials: true,
   });
+
+  app.useGlobalInterceptors(app.get(AuditInterceptor));
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('BCHealth API')

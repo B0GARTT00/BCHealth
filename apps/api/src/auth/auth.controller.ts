@@ -19,13 +19,13 @@ export class AuthController {
 
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  login(@Body() dto: LoginDto) {
-    return this.auth.login(dto);
+  login(@Body() dto: LoginDto, @Req() request: Request) {
+    return this.auth.login(dto, request.ip, request.get('user-agent'));
   }
 
   @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.auth.register(dto);
+  register(@Body() dto: RegisterDto, @Req() request: Request) {
+    return this.auth.register(dto, request.ip, request.get('user-agent'));
   }
 
   @Post('refresh')
@@ -38,7 +38,7 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   logout(@Body() dto: RefreshTokenDto, @Req() request: AuthenticatedRequest) {
-    return this.auth.logout(dto.refreshToken, request.user.id);
+    return this.auth.logout(dto.refreshToken, request.user.id, request.ip, request.get('user-agent'));
   }
 
   @Get('me')

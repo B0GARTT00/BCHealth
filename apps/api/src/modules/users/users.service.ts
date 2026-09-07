@@ -330,7 +330,7 @@ export class UsersService {
     await this.prisma.auditLog.create({
       data: {
         actorId,
-        action: previousRole && previousRole !== roleName ? 'CHANGE_ROLE' : 'ASSIGN_ROLE',
+        action: previousRole && previousRole !== roleName ? 'ROLE_CHANGE' : 'ASSIGN_ROLE',
         entity: 'User',
         entityId: userId,
         ipAddress,

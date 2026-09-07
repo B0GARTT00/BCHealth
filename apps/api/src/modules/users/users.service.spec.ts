@@ -265,7 +265,7 @@ describe('UsersService', () => {
       expect(prisma.auditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            action: 'CHANGE_ROLE',
+            action: 'ROLE_CHANGE',
             entity: 'User',
             entityId: 'user-1',
             metadata: { previousRole: UserRole.ADMINISTRATOR, newRole: UserRole.CLINIC_NURSE },
@@ -287,7 +287,7 @@ describe('UsersService', () => {
       await expect(service.assignRole('user-1', 'INVALID_ROLE' as any, 'actor-1')).rejects.toThrow('Invalid role.');
     });
 
-    it('should log CHANGE_ROLE when changing existing role', async () => {
+    it('should log ROLE_CHANGE when changing existing role', async () => {
       (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce(mockUser as any);
       (prisma.role.findUnique as jest.Mock).mockResolvedValueOnce({ id: 'role-2', name: UserRole.CLINIC_NURSE, description: 'Nurse' } as any);
       (prisma.userRole.deleteMany as jest.Mock).mockResolvedValueOnce({ count: 1 } as any);
@@ -299,7 +299,7 @@ describe('UsersService', () => {
       expect(prisma.auditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            action: 'CHANGE_ROLE',
+            action: 'ROLE_CHANGE',
           }),
         }),
       );

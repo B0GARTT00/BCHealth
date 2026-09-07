@@ -26,7 +26,7 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto, ipAddress?: string, userAgent?: string) {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -48,7 +48,14 @@ export class AuthService {
     const session = await this.createSession(user);
 
     await this.prisma.auditLog.create({
-      data: { actorId: user.id, action: 'CREATE', entity: 'User', entityId: user.id },
+      data: {
+        actorId: user.id,
+        action: 'CREATE',
+        entity: 'User',
+        entityId: user.id,
+        ipAddress,
+        userAgent,
+      },
     });
 
     return {
@@ -57,21 +64,44 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       include: { roles: { include: { role: true } } },
     }) as AuthUser | null;
 
-    if (user?.status !== 'ACTIVE') throw new UnauthorizedException('Invalid credentials.');
+    const valid =
+      user !== null &&
+      user.status === 'ACTIVE' &&
+      (await bcrypt.compare(dto.password, user.passwordHash));
 
-    const valid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!valid) throw new UnauthorizedException('Invalid credentials.');
+    if (!valid) {
+      await this.prisma.auditLog.create({
+        data: {
+          actorId: user?.id,
+          action: 'LOGIN_FAILED',
+          entity: 'User',
+          entityId: user?.id,
+          ipAddress,
+          userAgent,
+          metadata: { attemptedEmail: dto.email },
+        },
+      });
+
+      throw new UnauthorizedException('Invalid credentials.');
+    }
 
     const session = await this.createSession(user);
 
     await this.prisma.auditLog.create({
-      data: { actorId: user.id, action: 'LOGIN', entity: 'User', entityId: user.id },
+      data: {
+        actorId: user.id,
+        action: 'LOGIN',
+        entity: 'User',
+        entityId: user.id,
+        ipAddress,
+        userAgent,
+      },
     });
 
     return {
@@ -111,7 +141,7 @@ export class AuthService {
     };
   }
 
-  async logout(refreshToken?: string, actorId?: string) {
+  async logout(refreshToken?: string, actorId?: string, ipAddress?: string, userAgent?: string) {
     if (refreshToken) {
       const payload = await this.verifyRefreshToken(refreshToken).catch(() => null);
       if (payload) {
@@ -130,7 +160,14 @@ export class AuthService {
 
     if (actorId) {
       await this.prisma.auditLog.create({
-        data: { actorId, action: 'LOGOUT', entity: 'User', entityId: actorId },
+        data: {
+          actorId,
+          action: 'LOGOUT',
+          entity: 'User',
+          entityId: actorId,
+          ipAddress,
+          userAgent,
+        },
       });
     }
 
