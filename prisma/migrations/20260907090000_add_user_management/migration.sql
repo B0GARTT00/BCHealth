@@ -1,0 +1,8 @@
+-- AlterEnum
+ALTER TABLE `AuditLog` MODIFY COLUMN `action` ENUM('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'APPROVE', 'REJECT', 'DISPENSE', 'EXPORT', 'ARCHIVE', 'RESTORE', 'LIST_USERS', 'VIEW_USER', 'CREATE_USER', 'UPDATE_USER', 'DELETE_USER', 'ASSIGN_ROLE', 'CHANGE_ROLE') NOT NULL;
+
+-- AddIndex
+ALTER TABLE `User` ADD INDEX `User_status_idx`(`status`);
+
+-- AddIndex
+ALTER TABLE `User` ADD INDEX `User_deletedAt_idx`(`deletedAt`);

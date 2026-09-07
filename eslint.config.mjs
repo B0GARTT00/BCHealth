@@ -32,4 +32,10 @@ export default [
       'no-unused-vars': 'off',
     },
   },
+  {
+    files: ['**/*.spec.ts', '**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 ];

@@ -149,6 +149,13 @@ enum AuditAction {
   EXPORT
   ARCHIVE
   RESTORE
+  LIST_USERS
+  VIEW_USER
+  CREATE_USER
+  UPDATE_USER
+  DELETE_USER
+  ASSIGN_ROLE
+  CHANGE_ROLE
 }
 
 model User {
@@ -183,6 +190,8 @@ model User {
   archives              Archive[]
 
   @@index([displayName])
+  @@index([status])
+  @@index([deletedAt])
 }
 
 model Role {

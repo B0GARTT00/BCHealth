@@ -2,8 +2,8 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
-  isActive: boolean;
-  patientId: string | null;
+  status: string;
+  roles: { id: string; name: string }[];
   createdAt: Date;
   updatedAt: Date;
 }
