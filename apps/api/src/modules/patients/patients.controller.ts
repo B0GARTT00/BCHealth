@@ -3,12 +3,15 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../common/roles.decorator';
 import { RolesGuard } from '../../common/roles.guard';
+import { Permissions } from '../../auth/decorators/permissions.decorator';
+import { PermissionsGuard } from '../../auth/guards/permissions.guard';
+import { Permission } from '../../auth/constants/permissions';
 import { CreatePatientDto, UpdatePatientDto } from './dto';
 import { PatientsService } from './patients.service';
 
 @ApiTags('patients')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), RolesGuard, PermissionsGuard)
 @Controller('patients')
 export class PatientsController {
   constructor(private readonly patients: PatientsService) {}
@@ -27,12 +30,14 @@ export class PatientsController {
 
   @Post()
   @Roles('ADMINISTRATOR', 'CLINIC_NURSE', 'CLINIC_STAFF')
+  @Permissions(Permission.PATIENTS_MANAGE)
   create(@Body() dto: CreatePatientDto) {
     return this.patients.create(dto);
   }
 
   @Patch(':id')
   @Roles('ADMINISTRATOR', 'CLINIC_NURSE', 'CLINIC_STAFF')
+  @Permissions(Permission.PATIENTS_MANAGE)
   update(@Param('id') id: string, @Body() dto: UpdatePatientDto) {
     return this.patients.update(id, dto);
   }

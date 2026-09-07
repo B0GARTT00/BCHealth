@@ -2,7 +2,6 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { RefreshToken, Role, User, UserRole } from '@prisma/client';
-import argon2 from 'argon2';
 import bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -163,7 +162,7 @@ export class AuthService {
     await this.prisma.refreshToken.create({
       data: {
         userId: user.id,
-        tokenHash: await argon2.hash(refreshToken),
+        tokenHash: await bcrypt.hash(refreshToken, 12),
         expiresAt: this.getRefreshExpiry(),
       },
     });
@@ -183,7 +182,7 @@ export class AuthService {
 
   private async findMatchingRefreshToken(refreshToken: string, storedTokens: RefreshToken[]) {
     for (const storedToken of storedTokens) {
-      if (await argon2.verify(storedToken.tokenHash, refreshToken)) return storedToken;
+      if (await bcrypt.compare(refreshToken, storedToken.tokenHash)) return storedToken;
     }
     return null;
   }

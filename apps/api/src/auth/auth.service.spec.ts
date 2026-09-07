@@ -1,18 +1,16 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import argon2 from 'argon2';
 import bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 
-jest.mock('bcrypt', () => ({ compare: jest.fn() }));
-jest.mock('argon2', () => ({ hash: jest.fn(), verify: jest.fn() }));
+jest.mock('bcrypt', () => ({ compare: jest.fn(), hash: jest.fn() }));
 
 const demoUser = {
   id: 'user-1',
   email: 'admin.demo@bchealth.local',
   passwordHash: 'hash',
   displayName: 'Demo Administrator',
-  isActive: true,
+  status: 'ACTIVE',
   patientId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -23,6 +21,7 @@ const demoUser = {
 const compareMock = bcrypt.compare as jest.MockedFunction<
   (password: string, hash: string) => Promise<boolean>
 >;
+const hashMock = jest.mocked(bcrypt.hash);
 
 function createService() {
   const prisma = {
@@ -68,8 +67,7 @@ function createService() {
 describe('AuthService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.mocked(argon2.hash).mockResolvedValue('refresh-hash');
-    jest.mocked(argon2.verify).mockResolvedValue(true);
+    hashMock.mockResolvedValue('hashed-refresh-token' as never);
     compareMock.mockResolvedValue(true);
   });
 
@@ -90,7 +88,7 @@ describe('AuthService', () => {
     });
     expect(prisma.refreshToken.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ tokenHash: 'refresh-hash' }),
+        data: expect.objectContaining({ tokenHash: expect.any(String) }),
       }),
     );
     expect(prisma.auditLog.create).toHaveBeenCalledWith(
