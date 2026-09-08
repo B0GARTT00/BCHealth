@@ -1,12 +1,12 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, RefreshToken, User } from '@prisma/client';
-import argon2 from 'argon2';
+import { Prisma, RefreshToken, User, UserRole, Role } from '@prisma/client';
 import bcrypt from 'bcrypt';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, SignupDto } from './dto';
+import { RegisterDto } from './dto/register.dto';
 
 type AuthUser = User & {
   roles: (UserRole & { role: Role })[];
@@ -71,21 +71,17 @@ export class AuthService {
       include: { roles: { include: { role: true } } },
     });
 
-    if (!user?.isActive) throw new UnauthorizedException('Invalid credentials.');
-    if (!user.emailVerifiedAt) throw new UnauthorizedException('Please verify your email before signing in.');
+    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Invalid credentials.');
 
-    const valid =
-      user !== null &&
-      user.status === 'ACTIVE' &&
-      (await bcrypt.compare(dto.password, user.passwordHash));
+    const valid = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!valid) {
       await this.prisma.auditLog.create({
         data: {
-          actorId: user?.id,
+          actorId: user.id,
           action: 'LOGIN_FAILED',
           entity: 'User',
-          entityId: user?.id,
+          entityId: user.id,
           ipAddress,
           userAgent,
           metadata: { attemptedEmail: dto.email },
@@ -119,24 +115,18 @@ export class AuthService {
     if (!studentRole) throw new ConflictException('Student role is not configured. Run the database seed first.');
 
     try {
-      const verificationToken = randomBytes(32).toString('hex');
       const user = await this.prisma.user.create({
         data: {
           email: dto.email.toLowerCase(),
           displayName: dto.displayName.trim(),
           passwordHash: await bcrypt.hash(dto.password, 12),
-          emailVerificationTokenHash: this.hashVerificationToken(verificationToken),
-          emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           roles: { create: { roleId: studentRole.id } },
         },
         include: { roles: { include: { role: true } } },
       });
-      await this.prisma.auditLog.create({ data: { action: 'SIGNUP', entity: 'User', entityId: user.id } });
-      const verificationUrl = this.getVerificationUrl(verificationToken);
-      await this.sendVerificationEmail(user.email, user.displayName, verificationUrl);
+      await this.prisma.auditLog.create({ data: { action: 'CREATE', entity: 'User', entityId: user.id } });
       return {
-        message: 'Account created. Check your institutional email to activate your account.',
-        ...(this.config.get<string>('BREVO_API_KEY') ? {} : { verificationUrl }),
+        message: 'Account created successfully.',
       };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -146,21 +136,9 @@ export class AuthService {
     }
   }
 
-  async verifyEmail(token: string) {
-    const user = await this.prisma.user.findFirst({
-      where: {
-        emailVerificationTokenHash: this.hashVerificationToken(token),
-        emailVerificationExpiresAt: { gt: new Date() },
-      },
-      include: { roles: { include: { role: true } } },
-    });
-    if (!user) throw new UnauthorizedException('This activation link is invalid or expired.');
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { emailVerifiedAt: new Date(), emailVerificationTokenHash: null, emailVerificationExpiresAt: null },
-    });
-    await this.prisma.auditLog.create({ data: { actorId: user.id, action: 'EMAIL_VERIFIED', entity: 'User', entityId: user.id } });
-    return { message: 'Email verified. You can now sign in.' };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async verifyEmail(_token: string) {
+    throw new UnauthorizedException('Email verification is not yet available.');
   }
 
   async refresh(refreshToken: string) {
@@ -181,7 +159,7 @@ export class AuthService {
       include: { roles: { include: { role: true } } },
     }) as AuthUser | null;
 
-    if (user?.status !== 'ACTIVE') throw new UnauthorizedException('Invalid refresh token.');
+    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Invalid refresh token.');
 
     await this.prisma.refreshToken.update({
       where: { id: storedToken.id },
@@ -233,7 +211,7 @@ export class AuthService {
       include: { roles: { include: { role: true } } },
     }) as AuthUser | null;
 
-    if (user?.status !== 'ACTIVE') throw new UnauthorizedException('User is inactive.');
+    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('User is inactive.');
     return this.toSafeUser(user);
   }
 

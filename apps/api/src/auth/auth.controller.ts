@@ -5,7 +5,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
-import { LoginDto, LogoutDto, RefreshDto, SignupDto } from './dto';
+import { LoginDto, RefreshDto, SignupDto } from './dto';
 
 type AuthenticatedRequest = Request & {
   user: { id: string };
@@ -44,11 +44,11 @@ export class AuthController {
     summary: 'Refresh access token',
     description: 'Generates a new access token using a valid refresh token. Rate limited to 10 requests per minute.',
   })
-  @ApiBody({ type: RefreshTokenDto })
+  @ApiBody({ type: RefreshDto })
   @ApiResponse({ status: 200, description: 'New access and refresh tokens generated successfully.' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token.' })
   @ApiResponse({ status: 400, description: 'Validation error.' })
-  refresh(@Body() dto: RefreshTokenDto) {
+  refresh(@Body() dto: RefreshDto) {
     return this.auth.refresh(dto.refreshToken);
   }
 
@@ -59,10 +59,10 @@ export class AuthController {
     summary: 'Logout user',
     description: 'Invalidates the provided refresh token. Requires authentication.',
   })
-  @ApiBody({ type: RefreshTokenDto })
+  @ApiBody({ type: RefreshDto })
   @ApiResponse({ status: 200, description: 'Logged out successfully.' })
   @ApiResponse({ status: 401, description: 'Invalid or expired token.' })
-  logout(@Body() dto: RefreshTokenDto, @Req() request: AuthenticatedRequest) {
+  logout(@Body() dto: RefreshDto, @Req() request: AuthenticatedRequest) {
     return this.auth.logout(dto.refreshToken, request.user.id, request.ip, request.get('user-agent'));
   }
 

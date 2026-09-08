@@ -164,7 +164,6 @@ enum AuditAction {
 }
 
 model User {
-<<<<<<< HEAD
   id                    String                  @id @default(uuid())
   email                 String                  @unique
   passwordHash          String
