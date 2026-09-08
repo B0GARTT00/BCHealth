@@ -1,4 +1,4 @@
-import { IsDateString, IsEmail, IsEnum, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsDateString, IsEmail, IsEnum, IsInt, IsOptional, IsString, Matches, MinLength } from 'class-validator';
 
 export enum PatientTypeDto {
   STUDENT = 'STUDENT',
@@ -22,6 +22,7 @@ export class CreatePatientDto {
 
   @IsOptional()
   @IsEmail()
+  @Matches(/^[^@\s]+@brokenshire\.edu\.ph$/i, { message: 'Email must use the @brokenshire.edu.ph domain.' })
   email?: string;
 
   @IsOptional()
@@ -81,6 +82,7 @@ export class UpdatePatientDto {
 
   @IsOptional()
   @IsEmail()
+  @Matches(/^[^@\s]+@brokenshire\.edu\.ph$/i, { message: 'Email must use the @brokenshire.edu.ph domain.' })
   email?: string;
 
   @IsOptional()

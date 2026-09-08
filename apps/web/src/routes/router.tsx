@@ -19,6 +19,7 @@ import { SettingsPage } from '../pages/SettingsPage';
 import { AuditLogsPage } from '../pages/AuditLogsPage';
 import { AdminRolesPage } from '../pages/AdminRolesPage';
 import { LoginPage } from '../pages/LoginPage';
+import { VerifyEmailPage } from '../pages/VerifyEmailPage';
 import { PatientsPage } from '../pages/PatientsPage';
 import { PatientProfilePage } from '../pages/PatientProfilePage';
 import { PlaceholderPage } from '../pages/PlaceholderPage';
@@ -27,6 +28,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/dashboard" replace /> },
   { path: '/login', element: <LoginPage /> },
+  { path: '/verify-email', element: <VerifyEmailPage /> },
   {
     element: <ProtectedRoute />,
     children: [

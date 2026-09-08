@@ -67,6 +67,11 @@ export async function login(email: string, password: string) {
   return response.data;
 }
 
+export async function signup(email: string, displayName: string, password: string) {
+  const response = await api.post<{ message: string; verificationUrl?: string }>('/auth/signup', { email, displayName, password });
+  return response.data;
+}
+
 export async function refreshSession(refreshToken: string) {
   const response = await axios.post<AuthSession>(
     `${api.defaults.baseURL}/auth/refresh`,

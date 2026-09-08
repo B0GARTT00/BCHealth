@@ -79,23 +79,25 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: 'admin.demo@bchealth.local' },
-    update: {},
+    where: { email: 'admin.demo@brokenshire.edu.ph' },
+    update: { emailVerifiedAt: new Date() },
     create: {
-      email: 'admin.demo@bchealth.local',
+      email: 'admin.demo@brokenshire.edu.ph',
       passwordHash,
       displayName: 'Demo Administrator',
+      emailVerifiedAt: new Date(),
       roles: { create: { roleId: adminRole.id } },
     },
   });
 
   await prisma.user.upsert({
-    where: { email: 'nurse.demo@bchealth.local' },
-    update: {},
+    where: { email: 'nurse.demo@brokenshire.edu.ph' },
+    update: { emailVerifiedAt: new Date() },
     create: {
-      email: 'nurse.demo@bchealth.local',
+      email: 'nurse.demo@brokenshire.edu.ph',
       passwordHash,
       displayName: 'Demo Clinic Nurse',
+      emailVerifiedAt: new Date(),
       roles: { create: { roleId: nurseRole.id } },
     },
   });
@@ -108,7 +110,7 @@ async function main() {
       type: 'STUDENT',
       firstName: 'Demo',
       lastName: 'Student',
-      email: 'student.demo@bchealth.local',
+      email: 'student.demo@brokenshire.edu.ph',
       birthDate: new Date('2006-05-12'),
       sex: 'Female',
       studentProfile: { create: { studentId: '2026-0001', program: 'BS Information Technology', yearLevel: 1 } },
@@ -116,13 +118,24 @@ async function main() {
     },
   });
 
+  const studentEmail = 'student.demo@brokenshire.edu.ph';
+  const linkedStudentUser = await prisma.user.findUnique({ where: { patientId: patient.id } });
+  const studentEmailUser = await prisma.user.findUnique({ where: { email: studentEmail } });
+  if (linkedStudentUser && linkedStudentUser.email !== studentEmail) {
+    if (studentEmailUser && studentEmailUser.id !== linkedStudentUser.id) {
+      await prisma.user.update({ where: { id: studentEmailUser.id }, data: { patientId: null } });
+    }
+    await prisma.user.update({ where: { id: linkedStudentUser.id }, data: { email: studentEmail } });
+  }
+
   await prisma.user.upsert({
-    where: { email: 'student.demo@bchealth.local' },
-    update: { patientId: patient.id },
+    where: { email: studentEmail },
+    update: { patientId: patient.id, passwordHash, displayName: 'Demo Student', emailVerifiedAt: new Date() },
     create: {
-      email: 'student.demo@bchealth.local',
+      email: studentEmail,
       passwordHash,
       displayName: 'Demo Student',
+      emailVerifiedAt: new Date(),
       patientId: patient.id,
       roles: { create: { roleId: studentRole.id } },
     },

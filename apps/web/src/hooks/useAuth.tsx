@@ -1,11 +1,12 @@
 import type { AuthUser } from '@bchealth/types';
 import { createContext, useContext, useMemo, useState } from 'react';
-import { clearSession, login as loginRequest, logout as logoutRequest } from '../services/api';
+import { clearSession, login as loginRequest, logout as logoutRequest, signup as signupRequest } from '../services/api';
 
 type AuthContextValue = {
   user: AuthUser | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, displayName: string, password: string) => Promise<{ message: string; verificationUrl?: string }>;
   logout: () => Promise<void>;
 };
 
@@ -33,6 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async login(email, password) {
         const session = await loginRequest(email, password);
         setUser(session.user);
+      },
+      async signup(email, displayName, password) {
+        return signupRequest(email, displayName, password);
       },
       async logout() {
         await logoutRequest();

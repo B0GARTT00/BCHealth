@@ -118,11 +118,11 @@ npm run dev --workspace @bchealth/web
 Seed data includes development-only accounts. Do not use these credentials in a production environment.
 
 ```text
-Email:    admin.demo@bchealth.local
+Email:    admin.demo@brokenshire.edu.ph
 Password: DemoPass123!
 ```
 
-Additional seeded accounts use the `*.demo@bchealth.local` email pattern.
+Additional seeded accounts use the `*.demo@brokenshire.edu.ph` email pattern.
 
 ## Security and Privacy
 

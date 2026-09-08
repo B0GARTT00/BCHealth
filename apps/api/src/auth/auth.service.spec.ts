@@ -9,7 +9,7 @@ jest.mock('argon2', () => ({ hash: jest.fn(), verify: jest.fn() }));
 
 const demoUser = {
   id: 'user-1',
-  email: 'admin.demo@bchealth.local',
+  email: 'admin.demo@brokenshire.edu.ph',
   passwordHash: 'hash',
   displayName: 'Demo Administrator',
   isActive: true,
@@ -79,14 +79,14 @@ describe('AuthService', () => {
     jwt.signAsync.mockResolvedValueOnce('access-token').mockResolvedValueOnce('refresh-token');
 
     const result = await service.login({
-      email: 'admin.demo@bchealth.local',
+      email: 'admin.demo@brokenshire.edu.ph',
       password: 'DemoPass123!',
     });
 
     expect(result).toMatchObject({
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
-      user: { email: 'admin.demo@bchealth.local', roles: ['ADMINISTRATOR'] },
+      user: { email: 'admin.demo@brokenshire.edu.ph', roles: ['ADMINISTRATOR'] },
     });
     expect(prisma.refreshToken.create).toHaveBeenCalledWith(
       expect.objectContaining({
