@@ -10,6 +10,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest();
     const response = ctx.getResponse();
 
+    console.error('Unhandled exception:', exception);
+
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
