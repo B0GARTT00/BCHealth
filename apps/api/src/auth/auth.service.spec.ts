@@ -13,6 +13,7 @@ const demoUser = {
   passwordHash: 'hash',
   displayName: 'Demo Administrator',
   isActive: true,
+  emailVerifiedAt: new Date(),
   patientId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
