@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, ClipboardList, LayoutDashboard, LogOut, Package, Search, ShieldCheck, Users, Settings, FileCheck, Syringe, Stethoscope, ClipboardPlus, BarChart3, UserCog, GraduationCap, ScrollText, Megaphone, Inbox } from 'lucide-react';
+import { Bell, CalendarDays, ClipboardCheck, ClipboardList, LayoutDashboard, LogOut, Package, Search, ShieldCheck, Users, Settings, FileCheck, Syringe, Stethoscope, ClipboardPlus, UserCog, GraduationCap, ScrollText, Megaphone, Inbox } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -9,11 +9,11 @@ const navItems = [
   { group: 'Clinic', to: '/appointments', label: 'Appointments', icon: CalendarDays },
   { group: 'Health records', to: '/requirements', label: 'Requirements', icon: ClipboardPlus },
   { group: 'Health records', to: '/clearances', label: 'Clearances', icon: FileCheck },
-  { group: 'Health records', to: '/vaccinations', label: 'Vaccinations', icon: Syringe },
+  { group: 'Health records', to: '/vaccinations', label: 'Vaccination History', icon: Syringe },
+  { group: 'Health records', to: '/screenings', label: 'Health Screening', icon: ClipboardCheck },
   { group: 'Health records', to: '/certificates', label: 'Certificates', icon: Stethoscope },
   { group: 'Inventory', to: '/inventory/medicines', label: 'Medicines', icon: Package },
   { group: 'Inventory', to: '/inventory/dispensing', label: 'Dispensing', icon: ClipboardList },
-  { group: 'Insights', to: '/reports', label: 'Reports', icon: BarChart3 },
   { group: 'Communication', to: '/announcements', label: 'Announcements', icon: Megaphone },
   { group: 'Communication', to: '/notifications', label: 'Notifications', icon: Inbox },
   { group: 'Administration', to: '/admin/users', label: 'Users', icon: UserCog },
@@ -31,10 +31,10 @@ export function AppLayout() {
     <div className="min-h-screen bg-clinic-surface text-clinic-ink">
       <aside className="fixed inset-y-0 left-0 hidden h-screen w-[280px] flex-col bg-[var(--color-sidebar-bg)] text-slate-300 md:flex">
         <div className="flex h-[68px] shrink-0 items-center gap-2.5 border-b border-white/10 px-4">
-          <img src="/BC_logo.png" alt="Brokenshire College seal" width="34" height="34" className="h-[34px] w-[34px] rounded-full object-contain ring-1 ring-white/20" />
+          <img src="/Clinova.png" alt="CLINOVA logo" width="34" height="34" className="h-[34px] w-[34px] rounded-full object-contain ring-1 ring-white/20" />
           <div>
-            <p className="text-[15px] font-semibold tracking-tight text-white">BCHealth</p>
-            <p className="text-[11px] text-slate-400">Davao University Clinic</p>
+            <p className="text-[15px] font-semibold tracking-tight text-white">CLINOVA</p>
+            <p className="text-[11px] text-slate-400">Health Information Management System</p>
           </div>
         </div>
         <nav className="sidebar-navigation min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-2.5 py-4">

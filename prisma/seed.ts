@@ -142,6 +142,24 @@ async function main() {
     },
   });
 
+  const collegeRequirements = [
+    ['college-ua', 'College Laboratory Result - Urinalysis (UA)', 'Submit a valid urinalysis result for College health clearance.'],
+    ['college-cbc', 'College Laboratory Result - Complete Blood Count (CBC)', 'Submit a valid CBC result for College health clearance.'],
+    ['college-se', 'College Laboratory Result - Stool Examination (S/E)', 'Submit a valid stool examination result for College health clearance.'],
+    ['college-cxr', 'College Laboratory Result - Chest X-ray (CXR PA View)', 'Submit a valid chest X-ray result using the PA view for College health clearance.'],
+    ['college-hbsag', 'College Laboratory Result - HBsAg', 'Submit a valid HBsAg result for College health clearance.'],
+    ['college-anti-hbs', 'College Laboratory Result - Anti-HBs Quantitative', 'Submit a valid quantitative Anti-HBs result for College health clearance.'],
+    ['college-other', 'College Health Requirement - Other Supporting Document', 'Submit another clinic-approved health document when requested by the College program.'],
+  ] as const;
+
+  for (const [id, name, description] of collegeRequirements) {
+    await prisma.healthRequirement.upsert({
+      where: { id },
+      update: { name, description, applicableTo: 'COLLEGE', academicYearId: ay.id, semesterId: firstSemester.id },
+      create: { id, name, description, applicableTo: 'COLLEGE', academicYearId: ay.id, semesterId: firstSemester.id },
+    });
+  }
+
   await prisma.medicine.createMany({
     data: [
       { name: 'Paracetamol', genericName: 'Acetaminophen', dosageForm: '500mg tablet', unit: 'tablet', reorderLevel: 100 },

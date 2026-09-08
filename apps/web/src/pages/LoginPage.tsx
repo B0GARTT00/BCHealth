@@ -46,11 +46,11 @@ export function LoginPage() {
         <div className="pointer-events-none absolute bottom-10 left-[8vw] hidden max-w-sm text-white lg:block">
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-100/85">Brokenshire College</p>
           <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight">Care that keeps<br />your community well.</h1>
-          <p className="mt-3 text-sm leading-6 text-emerald-50/70">A secure digital clinic workspace for students, faculty, and staff.</p>
+          <p className="mt-3 text-sm leading-6 text-emerald-50/70">A web-based health information management system for private higher education in Davao City.</p>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="login-card relative w-full max-w-[440px] rounded-[22px] border p-8 shadow-2xl sm:p-10">
           <div className="mb-8">
-            <div className="mb-7 flex items-center gap-2.5"><img src="/BC_logo.png" alt="Brokenshire College seal" width="32" height="32" className="h-8 w-8 rounded-full object-contain" /><p className="text-base font-semibold tracking-tight text-white">BCHealth</p></div>
+            <div className="mb-7 flex items-center gap-2.5"><img src="/Clinova.png" alt="CLINOVA logo" width="32" height="32" className="h-8 w-8 rounded-full object-contain" /><p className="text-base font-semibold tracking-tight text-white">CLINOVA</p></div>
             <p className="text-2xl font-semibold tracking-tight text-white">Welcome back</p>
             <p className="mt-1.5 text-[13px] text-emerald-50/75">Sign in to your private clinic workspace.</p>
           </div>
@@ -61,7 +61,7 @@ export function LoginPage() {
           <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-white/15 bg-black/10 px-3.5 py-3 text-[11px] leading-4 text-emerald-50/75"><LockKeyhole className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-200" /><span><strong className="font-semibold text-white/90">Private clinic workspace</strong><br />Health information is protected by role-based access controls.</span></div>
           {import.meta.env.DEV && <p className="mt-4 text-center text-[11px] text-emerald-50/55">Development demo: <span className="font-medium text-white/75">*.demo@bchealth.local</span></p>}
           <div className="mt-4 flex justify-center text-[12px]"><Link className="font-medium text-emerald-100 hover:text-white hover:underline" to="/forgot-password">Forgot your password?</Link></div>
-          <p className="mt-7 text-center text-[11px] text-emerald-50/50">© 2026 BCHealth · Private clinic information system</p>
+          <p className="mt-7 text-center text-[11px] text-emerald-50/50">© 2026 CLINOVA · Private clinic information system</p>
         </form>
       </div>
     </main>

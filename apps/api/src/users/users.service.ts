@@ -19,4 +19,14 @@ export class UsersService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  findRoles() {
+    return this.prisma.role.findMany({
+      include: {
+        permissions: { include: { permission: true } },
+        _count: { select: { users: true } },
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
 }

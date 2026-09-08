@@ -3,10 +3,23 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
+import { AcademicModule } from './academic/academic.module';
+import { AuditModule } from './audit/audit.module';
+import { AppointmentsModule } from './appointments/appointments.module';
+import { ClearancesModule } from './clearances/clearances.module';
+import { CommunicationsModule } from './communications/communications.module';
+import { CertificatesModule } from './certificates/certificates.module';
+import { EmergenciesModule } from './emergencies/emergencies.module';
+import { DispensingModule } from './dispensing/dispensing.module';
 import { HealthModule } from './health/health.module';
+import { InventoryModule } from './inventory/inventory.module';
 import { PatientsModule } from './patients/patients.module';
+import { RequirementsModule } from './requirements/requirements.module';
+import { ReportsModule } from './reports/reports.module';
+import { ScreeningsModule } from './screenings/screenings.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
+import { VisitsModule } from './visits/visits.module';
 
 @Module({
   imports: [
@@ -19,9 +32,22 @@ import { UsersModule } from './users/users.module';
     ]),
     PrismaModule,
     HealthModule,
+    InventoryModule,
     AuthModule,
+    AcademicModule,
+    AuditModule,
+    AppointmentsModule,
+    ClearancesModule,
+    CommunicationsModule,
+    CertificatesModule,
+    EmergenciesModule,
+    DispensingModule,
     UsersModule,
     PatientsModule,
+    RequirementsModule,
+    ReportsModule,
+    ScreeningsModule,
+    VisitsModule,
   ],
   providers: [
     {

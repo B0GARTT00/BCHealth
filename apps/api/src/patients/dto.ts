@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsDateString, IsEmail, IsEnum, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 
 export enum PatientTypeDto {
   STUDENT = 'STUDENT',
@@ -94,4 +94,74 @@ export class UpdatePatientDto {
   @IsOptional()
   @IsString()
   sex?: string;
+
+  @IsOptional()
+  @IsInt()
+  yearLevel?: number;
+
+  @IsOptional()
+  @IsString()
+  program?: string;
+
+  @IsOptional()
+  @IsString()
+  department?: string;
+}
+
+export class CreateEmergencyContactDto {
+  @IsString()
+  name!: string;
+
+  @IsString()
+  relationship!: string;
+
+  @IsString()
+  phone!: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+}
+
+export class CreateMedicalHistoryDto {
+  @IsString()
+  summary!: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class CreateMedicalConditionDto {
+  @IsString()
+  name!: string;
+
+  @IsOptional()
+  @IsDateString()
+  diagnosedAt?: string;
+
+  @IsOptional()
+  @IsDateString()
+  resolvedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class CreateAllergyDto {
+  @IsString()
+  allergen!: string;
+
+  @IsOptional()
+  @IsString()
+  reaction?: string;
+
+  @IsOptional()
+  @IsString()
+  severity?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

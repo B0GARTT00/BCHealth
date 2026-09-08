@@ -17,4 +17,10 @@ export class UsersController {
   findAll() {
     return this.users.findAll();
   }
+
+  @Get('roles')
+  @Roles('ADMINISTRATOR')
+  findRoles() {
+    return this.users.findRoles();
+  }
 }
