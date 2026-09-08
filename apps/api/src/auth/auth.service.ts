@@ -1,11 +1,12 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { RefreshToken, Role, User, UserRole } from '@prisma/client';
+import { Prisma, RefreshToken, User } from '@prisma/client';
+import argon2 from 'argon2';
 import bcrypt from 'bcrypt';
+import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
+import { LoginDto, SignupDto } from './dto';
 
 type AuthUser = User & {
   roles: (UserRole & { role: Role })[];
@@ -68,7 +69,10 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       include: { roles: { include: { role: true } } },
-    }) as AuthUser | null;
+    });
+
+    if (!user?.isActive) throw new UnauthorizedException('Invalid credentials.');
+    if (!user.emailVerifiedAt) throw new UnauthorizedException('Please verify your email before signing in.');
 
     const valid =
       user !== null &&
@@ -108,6 +112,55 @@ export class AuthService {
       ...session,
       user: this.toSafeUser(user),
     };
+  }
+
+  async signup(dto: SignupDto) {
+    const studentRole = await this.prisma.role.findUnique({ where: { name: 'STUDENT' } });
+    if (!studentRole) throw new ConflictException('Student role is not configured. Run the database seed first.');
+
+    try {
+      const verificationToken = randomBytes(32).toString('hex');
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email.toLowerCase(),
+          displayName: dto.displayName.trim(),
+          passwordHash: await bcrypt.hash(dto.password, 12),
+          emailVerificationTokenHash: this.hashVerificationToken(verificationToken),
+          emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          roles: { create: { roleId: studentRole.id } },
+        },
+        include: { roles: { include: { role: true } } },
+      });
+      await this.prisma.auditLog.create({ data: { action: 'SIGNUP', entity: 'User', entityId: user.id } });
+      const verificationUrl = this.getVerificationUrl(verificationToken);
+      await this.sendVerificationEmail(user.email, user.displayName, verificationUrl);
+      return {
+        message: 'Account created. Check your institutional email to activate your account.',
+        ...(this.config.get<string>('BREVO_API_KEY') ? {} : { verificationUrl }),
+      };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('An account with this email already exists.');
+      }
+      throw error;
+    }
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        emailVerificationTokenHash: this.hashVerificationToken(token),
+        emailVerificationExpiresAt: { gt: new Date() },
+      },
+      include: { roles: { include: { role: true } } },
+    });
+    if (!user) throw new UnauthorizedException('This activation link is invalid or expired.');
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerifiedAt: new Date(), emailVerificationTokenHash: null, emailVerificationExpiresAt: null },
+    });
+    await this.prisma.auditLog.create({ data: { actorId: user.id, action: 'EMAIL_VERIFIED', entity: 'User', entityId: user.id } });
+    return { message: 'Email verified. You can now sign in.' };
   }
 
   async refresh(refreshToken: string) {
@@ -222,6 +275,40 @@ export class AuthService {
       if (await bcrypt.compare(refreshToken, storedToken.tokenHash)) return storedToken;
     }
     return null;
+  }
+
+  private hashVerificationToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private getVerificationUrl(token: string) {
+    const apiUrl = this.config.get<string>('PUBLIC_API_URL') ?? 'http://localhost:3000/api';
+    return `${apiUrl.replace(/\/$/, '')}/auth/verify-email?token=${token}`;
+  }
+
+  private async sendVerificationEmail(email: string, displayName: string, verificationUrl: string) {
+    const apiKey = this.config.get<string>('BREVO_API_KEY');
+    if (!apiKey) return;
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: { 'api-key': apiKey, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          sender: {
+            name: this.config.get<string>('EMAIL_FROM_NAME') ?? 'CLINOVA',
+            email: this.config.get<string>('EMAIL_FROM_ADDRESS') ?? 'no-reply@brokenshire.edu.ph',
+          },
+          to: [{ email, name: displayName }],
+          subject: 'Activate your CLINOVA account',
+          htmlContent: `<p>Hello ${displayName},</p><p>Activate your CLINOVA account by clicking the link below:</p><p><a href="${verificationUrl}">Activate account</a></p><p>This link expires in 24 hours.</p>`,
+        }),
+      });
+      if (!response.ok) {
+        console.error('Brevo rejected the verification email:', response.status);
+      }
+    } catch (error) {
+      console.error('Unable to send verification email.', error);
+    }
   }
 
   private getRefreshExpiry() {

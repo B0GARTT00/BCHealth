@@ -13,7 +13,7 @@ vi.mock('../services/api', () => ({
     refreshToken: 'refresh',
     user: {
       id: 'user-1',
-      email: 'admin.demo@bchealth.local',
+      email: 'admin.demo@brokenshire.edu.ph',
       displayName: 'Demo Administrator',
       roles: ['ADMINISTRATOR'],
     },

@@ -79,23 +79,25 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: 'admin.demo@bchealth.local' },
-    update: {},
+    where: { email: 'admin.demo@brokenshire.edu.ph' },
+    update: { emailVerifiedAt: new Date() },
     create: {
-      email: 'admin.demo@bchealth.local',
+      email: 'admin.demo@brokenshire.edu.ph',
       passwordHash,
       displayName: 'Demo Administrator',
+      emailVerifiedAt: new Date(),
       roles: { create: { roleId: adminRole.id } },
     },
   });
 
   await prisma.user.upsert({
-    where: { email: 'nurse.demo@bchealth.local' },
-    update: {},
+    where: { email: 'nurse.demo@brokenshire.edu.ph' },
+    update: { emailVerifiedAt: new Date() },
     create: {
-      email: 'nurse.demo@bchealth.local',
+      email: 'nurse.demo@brokenshire.edu.ph',
       passwordHash,
       displayName: 'Demo Clinic Nurse',
+      emailVerifiedAt: new Date(),
       roles: { create: { roleId: nurseRole.id } },
     },
   });
@@ -108,7 +110,7 @@ async function main() {
       type: 'STUDENT',
       firstName: 'Demo',
       lastName: 'Student',
-      email: 'student.demo@bchealth.local',
+      email: 'student.demo@brokenshire.edu.ph',
       birthDate: new Date('2006-05-12'),
       sex: 'FEMALE',
       studentProfile: { create: { studentId: '2026-0001', program: 'BS Information Technology', yearLevel: 1 } },
@@ -116,13 +118,24 @@ async function main() {
     },
   });
 
+  const studentEmail = 'student.demo@brokenshire.edu.ph';
+  const linkedStudentUser = await prisma.user.findUnique({ where: { patientId: patient.id } });
+  const studentEmailUser = await prisma.user.findUnique({ where: { email: studentEmail } });
+  if (linkedStudentUser && linkedStudentUser.email !== studentEmail) {
+    if (studentEmailUser && studentEmailUser.id !== linkedStudentUser.id) {
+      await prisma.user.update({ where: { id: studentEmailUser.id }, data: { patientId: null } });
+    }
+    await prisma.user.update({ where: { id: linkedStudentUser.id }, data: { email: studentEmail } });
+  }
+
   await prisma.user.upsert({
-    where: { email: 'student.demo@bchealth.local' },
-    update: { patientId: patient.id },
+    where: { email: studentEmail },
+    update: { patientId: patient.id, passwordHash, displayName: 'Demo Student', emailVerifiedAt: new Date() },
     create: {
-      email: 'student.demo@bchealth.local',
+      email: studentEmail,
       passwordHash,
       displayName: 'Demo Student',
+      emailVerifiedAt: new Date(),
       patientId: patient.id,
       roles: { create: { roleId: studentRole.id } },
     },
@@ -141,6 +154,24 @@ async function main() {
       deadline: new Date('2026-09-30'),
     },
   });
+
+  const collegeRequirements = [
+    ['college-ua', 'College Laboratory Result - Urinalysis (UA)', 'Submit a valid urinalysis result for College health clearance.'],
+    ['college-cbc', 'College Laboratory Result - Complete Blood Count (CBC)', 'Submit a valid CBC result for College health clearance.'],
+    ['college-se', 'College Laboratory Result - Stool Examination (S/E)', 'Submit a valid stool examination result for College health clearance.'],
+    ['college-cxr', 'College Laboratory Result - Chest X-ray (CXR PA View)', 'Submit a valid chest X-ray result using the PA view for College health clearance.'],
+    ['college-hbsag', 'College Laboratory Result - HBsAg', 'Submit a valid HBsAg result for College health clearance.'],
+    ['college-anti-hbs', 'College Laboratory Result - Anti-HBs Quantitative', 'Submit a valid quantitative Anti-HBs result for College health clearance.'],
+    ['college-other', 'College Health Requirement - Other Supporting Document', 'Submit another clinic-approved health document when requested by the College program.'],
+  ] as const;
+
+  for (const [id, name, description] of collegeRequirements) {
+    await prisma.healthRequirement.upsert({
+      where: { id },
+      update: { name, description, applicableTo: 'COLLEGE', academicYearId: ay.id, semesterId: firstSemester.id },
+      create: { id, name, description, applicableTo: 'COLLEGE', academicYearId: ay.id, semesterId: firstSemester.id },
+    });
+  }
 
   await prisma.medicine.createMany({
     data: [

@@ -1,12 +1,11 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { LoginDto, LogoutDto, RefreshDto, SignupDto } from './dto';
 
 type AuthenticatedRequest = Request & {
   user: { id: string };
@@ -19,28 +18,24 @@ export class AuthController {
 
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  @ApiOperation({
-    summary: 'Authenticate user',
-    description: 'Authenticates a user with email and password. Returns JWT access and refresh tokens on success. Rate limited to 5 requests per minute.',
-  })
-  @ApiBody({ type: LoginDto })
-  @ApiResponse({ status: 200, description: 'Login successful. Returns access token, refresh token, and user info.' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials.' })
-  @ApiResponse({ status: 400, description: 'Validation error.' })
-  login(@Body() dto: LoginDto, @Req() request: Request) {
-    return this.auth.login(dto, request.ip, request.get('user-agent'));
+  login(@Body() dto: LoginDto) {
+    return this.auth.login(dto);
   }
 
-  @Post('register')
-  @ApiOperation({
-    summary: 'Register new user',
-    description: 'Registers a new user account. Returns JWT access and refresh tokens on success.',
-  })
-  @ApiBody({ type: RegisterDto })
-  @ApiResponse({ status: 201, description: 'User registered successfully. Returns access token, refresh token, and user info.' })
-  @ApiResponse({ status: 400, description: 'Validation error or email already in use.' })
-  register(@Body() dto: RegisterDto, @Req() request: Request) {
-    return this.auth.register(dto, request.ip, request.get('user-agent'));
+  @Post('signup')
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  signup(@Body() dto: SignupDto) {
+    return this.auth.signup(dto);
+  }
+
+  @Get('verify-email')
+  async verifyEmail(@Query('token') token: string, @Res() response: Response) {
+    try {
+      await this.auth.verifyEmail(token);
+      return response.redirect(`${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/verify-email?status=success`);
+    } catch {
+      return response.status(HttpStatus.FOUND).redirect(`${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/verify-email?status=error`);
+    }
   }
 
   @Post('refresh')

@@ -164,6 +164,7 @@ enum AuditAction {
 }
 
 model User {
+<<<<<<< HEAD
   id                    String                  @id @default(uuid())
   email                 String                  @unique
   passwordHash          String
@@ -193,6 +194,24 @@ model User {
   deletedAt             DateTime?
   notifications         Notification[]
   archives              Archive[]
+=======
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  displayName   String
+  isActive      Boolean        @default(true)
+  emailVerifiedAt DateTime?
+  emailVerificationTokenHash String? @unique
+  emailVerificationExpiresAt DateTime?
+  patientId     String?        @unique
+  patient       Patient?       @relation(fields: [patientId], references: [id])
+  roles         UserRole[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+>>>>>>> f95edafe7de34aaf95bed007d89de0bc0ab6e83e
 
   @@index([displayName])
   @@index([status])

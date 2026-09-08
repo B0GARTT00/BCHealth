@@ -1,30 +1,25 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
-import configuration from './config/configuration';
-import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { HealthModule } from './health/health.module';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
+import { AcademicModule } from './academic/academic.module';
+import { AuditModule } from './audit/audit.module';
+import { AppointmentsModule } from './appointments/appointments.module';
+import { ClearancesModule } from './clearances/clearances.module';
+import { CommunicationsModule } from './communications/communications.module';
+import { CertificatesModule } from './certificates/certificates.module';
+import { EmergenciesModule } from './emergencies/emergencies.module';
+import { DispensingModule } from './dispensing/dispensing.module';
+import { HealthModule } from './health/health.module';
+import { InventoryModule } from './inventory/inventory.module';
+import { PatientsModule } from './patients/patients.module';
+import { RequirementsModule } from './requirements/requirements.module';
+import { ReportsModule } from './reports/reports.module';
+import { ScreeningsModule } from './screenings/screenings.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { UsersModule } from './modules/users/users.module';
-import { PatientsModule } from './modules/patients/patients.module';
-import { ClinicVisitsModule } from './modules/clinic-visits/clinic-visits.module';
-import { ConsultationsModule } from './modules/consultations/consultations.module';
-import { AppointmentsModule } from './modules/appointments/appointments.module';
-import { HealthRequirementsModule } from './modules/health-requirements/health-requirements.module';
-import { ClearancesModule } from './modules/clearances/clearances.module';
-import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
-import { ScreeningsModule } from './modules/screenings/screenings.module';
-import { CertificatesModule } from './modules/certificates/certificates.module';
-import { InventoryModule } from './modules/inventory/inventory.module';
-import { DispensingModule } from './modules/dispensing/dispensing.module';
-import { EmergencyModule } from './modules/emergency/emergency.module';
-import { ReportsModule } from './modules/reports/reports.module';
-import { NotificationsModule } from './modules/notifications/notifications.module';
-import { AnnouncementsModule } from './modules/announcements/announcements.module';
-import { ArchiveModule } from './modules/archive/archive.module';
-import { AuditModule } from './modules/audit/audit.module';
+import { UsersModule } from './users/users.module';
+import { VisitsModule } from './visits/visits.module';
 
 @Module({
   imports: [
@@ -40,25 +35,28 @@ import { AuditModule } from './modules/audit/audit.module';
     ]),
     PrismaModule,
     HealthModule,
+    InventoryModule,
     AuthModule,
+    AcademicModule,
+    AuditModule,
+    AppointmentsModule,
+    ClearancesModule,
+    CommunicationsModule,
+    CertificatesModule,
+    EmergenciesModule,
+    DispensingModule,
     UsersModule,
     PatientsModule,
-    ClinicVisitsModule,
-    ConsultationsModule,
-    AppointmentsModule,
-    HealthRequirementsModule,
-    ClearancesModule,
-    VaccinationsModule,
-    ScreeningsModule,
-    CertificatesModule,
-    InventoryModule,
-    DispensingModule,
-    EmergencyModule,
+    RequirementsModule,
     ReportsModule,
-    NotificationsModule,
-    AnnouncementsModule,
-    ArchiveModule,
-    AuditModule,
+    ScreeningsModule,
+    VisitsModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
   providers: [GlobalExceptionFilter, ResponseInterceptor],
 })

@@ -1,0 +1,109 @@
+import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { VisitStatus } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateConsultationDto, CreateVisitDto, CreateVitalSignDto } from './dto';
+
+@Injectable()
+export class VisitsService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(dto: CreateVisitDto, actorId: string) {
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        deletedAt: null,
+        OR: [{ id: dto.patientId }, { patientNumber: dto.patientId }],
+      },
+    });
+    if (!patient) throw new NotFoundException('Active patient not found.');
+
+    const visit = await this.prisma.clinicVisit.create({
+      data: { ...dto, patientId: patient.id },
+      include: { patient: true },
+    });
+    await this.audit(actorId, 'VISIT_CREATED', visit.id);
+    return visit;
+  }
+
+  listQueue() {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    return this.prisma.clinicVisit.findMany({
+      where: {
+        visitDate: { gte: start, lt: end },
+        status: { in: [VisitStatus.OPEN, VisitStatus.IN_CONSULTATION] },
+      },
+      include: { patient: true, vitalSigns: { orderBy: { recordedAt: 'desc' }, take: 1 } },
+      orderBy: { visitDate: 'asc' },
+    });
+  }
+
+  findOne(id: string) {
+    return this.prisma.clinicVisit.findUnique({
+      where: { id },
+      include: {
+        patient: true,
+        vitalSigns: { orderBy: { recordedAt: 'desc' } },
+        consultations: { include: { diagnoses: true, treatments: true, prescriptions: { include: { items: true } } } },
+      },
+    });
+  }
+
+  async addVitalSigns(id: string, dto: CreateVitalSignDto, actorId: string) {
+    await this.ensureVisit(id);
+    const vitalSigns = await this.prisma.vitalSign.create({
+      data: { clinicVisitId: id, recordedById: actorId, ...dto },
+    });
+    await this.audit(actorId, 'VISIT_VITAL_SIGNS_RECORDED', id);
+    return vitalSigns;
+  }
+
+  async updateStatus(id: string, status: VisitStatus, actorId: string) {
+    await this.ensureVisit(id);
+    if (status === VisitStatus.OPEN) {
+      throw new UnprocessableEntityException('A visit cannot return to the open queue.');
+    }
+    const visit = await this.prisma.clinicVisit.update({ where: { id }, data: { status } });
+    await this.audit(actorId, `VISIT_STATUS_${status}`, id);
+    return visit;
+  }
+
+  async addConsultation(id: string, dto: CreateConsultationDto, clinicianId: string) {
+    const visit = await this.ensureVisit(id);
+    const consultation = await this.prisma.consultation.create({
+      data: {
+        clinicVisitId: id,
+        clinicianId,
+        subjective: dto.subjective,
+        objective: dto.objective,
+        assessment: dto.assessment,
+        plan: dto.plan,
+        diagnoses: dto.diagnoses ? { create: dto.diagnoses } : undefined,
+        treatments: dto.treatments ? { create: dto.treatments } : undefined,
+        prescriptions: dto.prescriptionItems?.length
+          ? { create: { instructions: dto.prescriptionInstructions, items: { create: dto.prescriptionItems } } }
+          : undefined,
+      },
+      include: { diagnoses: true, treatments: true, prescriptions: { include: { items: true } } },
+    });
+    if (visit.status !== VisitStatus.IN_CONSULTATION) {
+      await this.prisma.clinicVisit.update({ where: { id }, data: { status: VisitStatus.IN_CONSULTATION } });
+    }
+    await this.audit(clinicianId, 'VISIT_CONSULTATION_RECORDED', id);
+    return consultation;
+  }
+
+  private async ensureVisit(id: string) {
+    const visit = await this.prisma.clinicVisit.findUnique({ where: { id } });
+    if (!visit) throw new NotFoundException('Clinic visit not found.');
+    return visit;
+  }
+
+  private audit(actorId: string, action: string, visitId: string) {
+    return this.prisma.auditLog.create({
+      data: { actorId, action, entity: 'ClinicVisit', entityId: visitId },
+    });
+  }
+}
