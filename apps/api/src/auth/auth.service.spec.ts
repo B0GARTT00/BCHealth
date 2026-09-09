@@ -10,7 +10,12 @@ const demoUser = {
   email: 'admin.demo@brokenshire.edu.ph',
   passwordHash: 'hash',
   displayName: 'Demo Administrator',
+<<<<<<< HEAD
   status: 'ACTIVE',
+=======
+  isActive: true,
+  emailVerifiedAt: new Date(),
+>>>>>>> fd2c3141e608b53759333afb9f3f788d6b0f9fc1
   patientId: null,
   createdAt: new Date(),
   updatedAt: new Date(),

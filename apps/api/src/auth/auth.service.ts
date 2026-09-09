@@ -124,9 +124,21 @@ export class AuthService {
         },
         include: { roles: { include: { role: true } } },
       });
+<<<<<<< HEAD
       await this.prisma.auditLog.create({ data: { action: 'CREATE', entity: 'User', entityId: user.id } });
       return {
         message: 'Account created successfully.',
+=======
+      await this.prisma.auditLog.create({ data: { action: 'SIGNUP', entity: 'User', entityId: user.id } });
+      const verificationUrl = this.getVerificationUrl(verificationToken);
+      await this.sendVerificationEmail(user.email, user.displayName, verificationUrl);
+      const isProduction = this.config.get<string>('NODE_ENV') === 'production';
+      return {
+        message: 'Account created. Check your institutional email to activate your account.',
+        // Developers need the token URL even when a shared Brevo key is present.
+        // Never expose it from a production API response.
+        ...(!isProduction ? { verificationUrl } : {}),
+>>>>>>> fd2c3141e608b53759333afb9f3f788d6b0f9fc1
       };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
