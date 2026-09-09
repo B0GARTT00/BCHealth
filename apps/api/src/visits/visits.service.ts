@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import { VisitStatus } from '@prisma/client';
+import { VisitStatus, AuditAction } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateConsultationDto, CreateVisitDto, CreateVitalSignDto } from './dto';
 
@@ -20,7 +20,7 @@ export class VisitsService {
       data: { ...dto, patientId: patient.id },
       include: { patient: true },
     });
-    await this.audit(actorId, 'VISIT_CREATED', visit.id);
+    await this.audit(actorId, AuditAction.VISIT_CREATED, visit.id);
     return visit;
   }
 
@@ -56,7 +56,7 @@ export class VisitsService {
     const vitalSigns = await this.prisma.vitalSign.create({
       data: { clinicVisitId: id, recordedById: actorId, ...dto },
     });
-    await this.audit(actorId, 'VISIT_VITAL_SIGNS_RECORDED', id);
+    await this.audit(actorId, AuditAction.VISIT_VITAL_SIGNS_RECORDED, id);
     return vitalSigns;
   }
 
@@ -66,7 +66,8 @@ export class VisitsService {
       throw new UnprocessableEntityException('A visit cannot return to the open queue.');
     }
     const visit = await this.prisma.clinicVisit.update({ where: { id }, data: { status } });
-    await this.audit(actorId, `VISIT_STATUS_${status}`, id);
+    const statusAction = `VISIT_STATUS_${status}` as AuditAction;
+    await this.audit(actorId, statusAction, id);
     return visit;
   }
 
@@ -91,7 +92,7 @@ export class VisitsService {
     if (visit.status !== VisitStatus.IN_CONSULTATION) {
       await this.prisma.clinicVisit.update({ where: { id }, data: { status: VisitStatus.IN_CONSULTATION } });
     }
-    await this.audit(clinicianId, 'VISIT_CONSULTATION_RECORDED', id);
+    await this.audit(clinicianId, AuditAction.VISIT_CONSULTATION_RECORDED, id);
     return consultation;
   }
 
@@ -101,7 +102,7 @@ export class VisitsService {
     return visit;
   }
 
-  private audit(actorId: string, action: string, visitId: string) {
+  private audit(actorId: string, action: AuditAction, visitId: string) {
     return this.prisma.auditLog.create({
       data: { actorId, action, entity: 'ClinicVisit', entityId: visitId },
     });

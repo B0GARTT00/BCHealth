@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, RequirementStatus } from '@prisma/client';
+import { Prisma, AuditAction, RequirementStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRequirementDto, CreateSubmissionDto, ReviewSubmissionDto } from './dto';
 
@@ -22,7 +22,7 @@ export class RequirementsService {
         deadline: dto.deadline ? new Date(dto.deadline) : undefined,
       },
     });
-    await this.audit(actorId, 'REQUIREMENT_CREATED', requirement.id);
+    await this.audit(actorId, AuditAction.REQUIREMENT_CREATED, requirement.id);
     return requirement;
   }
 
@@ -45,7 +45,7 @@ export class RequirementsService {
       const submission = await this.prisma.requirementSubmission.create({
         data: { requirementId: requirement.id, patientId: patient.id, documentId: dto.documentId, expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined },
       });
-      await this.audit(actorId, 'REQUIREMENT_SUBMITTED', submission.id);
+      await this.audit(actorId, AuditAction.REQUIREMENT_SUBMITTED, submission.id);
       return submission;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') throw new ConflictException('This requirement has already been submitted for the patient.');
@@ -60,11 +60,12 @@ export class RequirementsService {
       where: { id },
       data: { status: dto.status, notes: dto.notes, expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined, reviewerId, reviewedAt: new Date() },
     });
-    await this.audit(reviewerId, `REQUIREMENT_${dto.status}`, id);
+    const statusAction = `REQUIREMENT_${dto.status}` as AuditAction;
+    await this.audit(reviewerId, statusAction, id);
     return updated;
   }
 
-  private audit(actorId: string, action: string, entityId: string) {
+  private audit(actorId: string, action: AuditAction, entityId: string) {
     return this.prisma.auditLog.create({ data: { actorId, action, entity: 'Requirement', entityId } });
   }
 }

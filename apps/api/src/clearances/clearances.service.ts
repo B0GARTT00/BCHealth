@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ClearanceStatus, RequirementStatus } from '@prisma/client';
+import { ClearanceStatus, AuditAction, RequirementStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClearanceDto, ReviewClearanceDto } from './dto';
 
@@ -33,7 +33,7 @@ export class ClearancesService {
       data: { patientId: patient.id, type: dto.type, academicYearId: academicYear.id, semesterId: dto.semesterId ?? academicYear.semesters[0]?.id, status: eligibility.eligible ? ClearanceStatus.FOR_REVIEW : ClearanceStatus.INCOMPLETE },
       include: { patient: true, academicYear: true, semester: true },
     });
-    await this.audit(actorId, 'CLEARANCE_CREATED', clearance.id);
+    await this.audit(actorId, AuditAction.CLEARANCE_CREATED, clearance.id);
     return clearance;
   }
 
@@ -41,11 +41,12 @@ export class ClearancesService {
     const clearance = await this.prisma.clearance.findUnique({ where: { id } });
     if (!clearance) throw new NotFoundException('Clearance not found.');
     const updated = await this.prisma.clearance.update({ where: { id }, data: { status: dto.status, remarks: dto.remarks, issuedById: dto.status === ClearanceStatus.CLEARED ? actorId : undefined, issuedAt: dto.status === ClearanceStatus.CLEARED ? new Date() : undefined } });
-    await this.audit(actorId, `CLEARANCE_${dto.status}`, id);
+    const statusAction = `CLEARANCE_${dto.status}` as AuditAction;
+    await this.audit(actorId, statusAction, id);
     return updated;
   }
 
-  private audit(actorId: string, action: string, entityId: string) {
+  private audit(actorId: string, action: AuditAction, entityId: string) {
     return this.prisma.auditLog.create({ data: { actorId, action, entity: 'Clearance', entityId } });
   }
 }

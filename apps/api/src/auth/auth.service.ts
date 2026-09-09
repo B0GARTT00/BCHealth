@@ -1,9 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, RefreshToken, User, UserRole, Role } from '@prisma/client';
+import { Prisma, RefreshToken, User, UserRole, Role, AuditAction } from '@prisma/client';
 import bcrypt from 'bcrypt';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, SignupDto } from './dto';
 import { RegisterDto } from './dto/register.dto';
@@ -51,7 +51,7 @@ export class AuthService {
     await this.prisma.auditLog.create({
       data: {
         actorId: user.id,
-        action: 'CREATE',
+        action: AuditAction.CREATE,
         entity: 'User',
         entityId: user.id,
         ipAddress,
@@ -79,7 +79,7 @@ export class AuthService {
       await this.prisma.auditLog.create({
         data: {
           actorId: user.id,
-          action: 'LOGIN_FAILED',
+          action: AuditAction.LOGIN_FAILED,
           entity: 'User',
           entityId: user.id,
           ipAddress,
@@ -96,7 +96,7 @@ export class AuthService {
     await this.prisma.auditLog.create({
       data: {
         actorId: user.id,
-        action: 'LOGIN',
+        action: AuditAction.LOGIN,
         entity: 'User',
         entityId: user.id,
         ipAddress,
@@ -124,12 +124,8 @@ export class AuthService {
         },
         include: { roles: { include: { role: true } } },
       });
-<<<<<<< HEAD
-      await this.prisma.auditLog.create({ data: { action: 'CREATE', entity: 'User', entityId: user.id } });
-      return {
-        message: 'Account created successfully.',
-=======
-      await this.prisma.auditLog.create({ data: { action: 'SIGNUP', entity: 'User', entityId: user.id } });
+      const verificationToken = randomUUID();
+      await this.prisma.auditLog.create({ data: { action: AuditAction.SIGNUP, entity: 'User', entityId: user.id } });
       const verificationUrl = this.getVerificationUrl(verificationToken);
       await this.sendVerificationEmail(user.email, user.displayName, verificationUrl);
       const isProduction = this.config.get<string>('NODE_ENV') === 'production';
@@ -138,7 +134,6 @@ export class AuthService {
         // Developers need the token URL even when a shared Brevo key is present.
         // Never expose it from a production API response.
         ...(!isProduction ? { verificationUrl } : {}),
->>>>>>> fd2c3141e608b53759333afb9f3f788d6b0f9fc1
       };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -205,7 +200,7 @@ export class AuthService {
       await this.prisma.auditLog.create({
         data: {
           actorId,
-          action: 'LOGOUT',
+          action: AuditAction.LOGOUT,
           entity: 'User',
           entityId: actorId,
           ipAddress,

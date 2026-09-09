@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { PatientType, Prisma } from '@prisma/client';
+import { PatientType, Prisma, AuditAction } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateAllergyDto,
@@ -20,8 +20,8 @@ export class PatientsService {
       return await this.prisma.patient.create({
         data: {
           ...patientData,
-          studentProfile: dto.type === 'STUDENT' && program ? { create: { studentId: dto.patientNumber, program, yearLevel } } : undefined,
-          employeeProfile: dto.type !== 'STUDENT' && department ? { create: { employeeId: dto.patientNumber, department } } : undefined,
+          studentProfile: dto.type === PatientType.STUDENT && program ? { create: { studentId: dto.patientNumber, program, yearLevel } } : undefined,
+          employeeProfile: dto.type !== PatientType.STUDENT && department ? { create: { employeeId: dto.patientNumber, department } } : undefined,
         },
       });
     } catch (error) {
@@ -40,14 +40,14 @@ export class PatientsService {
       const type = dto.type ?? existing.type;
       return await this.prisma.$transaction(async (transaction) => {
         const patient = await transaction.patient.update({ where: { id }, data: patientData });
-        if (type === 'STUDENT' && (program !== undefined || yearLevel !== undefined || existing.studentProfile)) {
+        if (type === PatientType.STUDENT && (program !== undefined || yearLevel !== undefined || existing.studentProfile)) {
           await transaction.studentProfile.upsert({
             where: { patientId: id },
             update: { program: program ?? existing.studentProfile?.program ?? '', yearLevel },
             create: { patientId: id, studentId: patient.patientNumber, program: program ?? '', yearLevel },
           });
         }
-        if (type !== 'STUDENT' && (department !== undefined || existing.employeeProfile)) {
+        if (type !== PatientType.STUDENT && (department !== undefined || existing.employeeProfile)) {
           await transaction.employeeProfile.upsert({
             where: { patientId: id },
             update: { department: department ?? existing.employeeProfile?.department ?? '' },
@@ -67,31 +67,31 @@ export class PatientsService {
   async remove(id: string, actorId: string) {
     await this.ensureExists(id);
     const patient = await this.prisma.patient.update({ where: { id }, data: { deletedAt: new Date() } });
-    await this.audit(actorId, 'PATIENT_ARCHIVED', id);
+    await this.audit(actorId, AuditAction.PATIENT_ARCHIVED, id);
     return patient;
   }
 
   async restore(id: string, actorId: string) {
     await this.ensureExists(id);
     const patient = await this.prisma.patient.update({ where: { id }, data: { deletedAt: null } });
-    await this.audit(actorId, 'PATIENT_RESTORED', id);
+    await this.audit(actorId, AuditAction.PATIENT_RESTORED, id);
     return patient;
   }
 
   addEmergencyContact(patientId: string, dto: CreateEmergencyContactDto, actorId: string) {
-    return this.createRelated(patientId, actorId, 'PATIENT_EMERGENCY_CONTACT_ADDED', () =>
+    return this.createRelated(patientId, actorId, AuditAction.PATIENT_EMERGENCY_CONTACT_ADDED, () =>
       this.prisma.emergencyContact.create({ data: { patientId, ...dto } }),
     );
   }
 
   addMedicalHistory(patientId: string, dto: CreateMedicalHistoryDto, actorId: string) {
-    return this.createRelated(patientId, actorId, 'PATIENT_HISTORY_ADDED', () =>
+    return this.createRelated(patientId, actorId, AuditAction.PATIENT_HISTORY_ADDED, () =>
       this.prisma.medicalHistory.create({ data: { patientId, ...dto } }),
     );
   }
 
   addCondition(patientId: string, dto: CreateMedicalConditionDto, actorId: string) {
-    return this.createRelated(patientId, actorId, 'PATIENT_CONDITION_ADDED', () =>
+    return this.createRelated(patientId, actorId, AuditAction.PATIENT_CONDITION_ADDED, () =>
       this.prisma.medicalCondition.create({
         data: {
           patientId,
@@ -104,12 +104,12 @@ export class PatientsService {
   }
 
   addAllergy(patientId: string, dto: CreateAllergyDto, actorId: string) {
-    return this.createRelated(patientId, actorId, 'PATIENT_ALLERGY_ADDED', () =>
+    return this.createRelated(patientId, actorId, AuditAction.PATIENT_ALLERGY_ADDED, () =>
       this.prisma.allergy.create({ data: { patientId, ...dto } }),
     );
   }
 
-  private async createRelated<T>(patientId: string, actorId: string, action: string, create: () => Promise<T>) {
+  private async createRelated<T>(patientId: string, actorId: string, action: AuditAction, create: () => Promise<T>) {
     await this.ensureExists(patientId);
     const record = await create();
     await this.audit(actorId, action, patientId);
@@ -122,7 +122,7 @@ export class PatientsService {
     return patient;
   }
 
-  private audit(actorId: string, action: string, patientId: string) {
+  private audit(actorId: string, action: AuditAction, patientId: string) {
     return this.prisma.auditLog.create({
       data: { actorId, action, entity: 'Patient', entityId: patientId },
     });

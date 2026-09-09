@@ -347,11 +347,11 @@ export async function getReportsSummary() {
   return response.data;
 }
 
-export type AdminUser = { id: string; email: string; displayName: string; isActive: boolean; patientId?: string | null; roles: { role: { name: string } }[]; createdAt: string };
+export type AdminUser = { id: string; email: string; displayName: string; status: string; patientId?: string | null; roles: { id: string; name: string }[]; createdAt: string };
 
 export async function getAdminUsers() {
-  const response = await api.get<AdminUser[]>('/users');
-  return response.data;
+  const response = await api.get<{ data: AdminUser[]; meta: { page: number; limit: number; total: number; totalPages: number } }>('/users');
+  return response.data.data;
 }
 
 export type AdminRole = { id: string; name: string; description?: string | null; _count: { users: number }; permissions: { permission: { key: string; description?: string | null } }[] };

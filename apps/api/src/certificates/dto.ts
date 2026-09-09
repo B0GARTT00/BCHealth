@@ -1,11 +1,12 @@
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { CertificateType } from '@prisma/client';
+import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class CreateCertificateDto {
   @IsString()
   patientId!: string;
 
-  @IsString()
-  type!: string;
+  @IsEnum(CertificateType)
+  type!: CertificateType;
 
   @IsString()
   purpose!: string;

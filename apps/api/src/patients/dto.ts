@@ -1,18 +1,13 @@
+import { PatientType, Sex } from '@prisma/client';
 import { IsDateString, IsEmail, IsEnum, IsInt, IsOptional, IsString, Matches, MinLength } from 'class-validator';
-
-export enum PatientTypeDto {
-  STUDENT = 'STUDENT',
-  FACULTY = 'FACULTY',
-  STAFF = 'STAFF',
-}
 
 export class CreatePatientDto {
   @IsString()
   @MinLength(3)
   patientNumber!: string;
 
-  @IsEnum(PatientTypeDto)
-  type!: PatientTypeDto;
+  @IsEnum(PatientType)
+  type!: PatientType;
 
   @IsString()
   firstName!: string;
@@ -42,8 +37,8 @@ export class CreatePatientDto {
   address?: string;
 
   @IsOptional()
-  @IsString()
-  sex?: string;
+  @IsEnum(Sex)
+  sex?: Sex;
 
   @IsOptional()
   @IsInt()
@@ -65,8 +60,8 @@ export class UpdatePatientDto {
   patientNumber?: string;
 
   @IsOptional()
-  @IsEnum(PatientTypeDto)
-  type?: PatientTypeDto;
+  @IsEnum(PatientType)
+  type?: PatientType;
 
   @IsOptional()
   @IsString()
@@ -94,8 +89,8 @@ export class UpdatePatientDto {
   address?: string;
 
   @IsOptional()
-  @IsString()
-  sex?: string;
+  @IsEnum(Sex)
+  sex?: Sex;
 
   @IsOptional()
   @IsInt()

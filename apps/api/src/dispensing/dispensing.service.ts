@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InventoryTransactionType } from '@prisma/client';
+import { InventoryTransactionType, AuditAction } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDispensationDto } from './dto';
 
@@ -30,7 +30,7 @@ export class DispensingService {
       }
       return record;
     });
-    await this.prisma.auditLog.create({ data: { actorId, action: 'MEDICINE_DISPENSED', entity: 'MedicineDispensation', entityId: dispensation.id } });
+    await this.prisma.auditLog.create({ data: { actorId, action: AuditAction.MEDICINE_DISPENSED, entity: 'MedicineDispensation', entityId: dispensation.id } });
     return dispensation;
   }
 }
