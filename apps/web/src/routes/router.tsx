@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { AuthLayout } from '../layouts/AuthLayout';
 import { AppLayout } from '../layouts/AppLayout';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ClinicVisitsPage } from '../pages/ClinicVisitsPage';
@@ -27,8 +28,28 @@ import { ProtectedRoute } from './ProtectedRoute';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/dashboard" replace /> },
-  { path: '/login', element: <LoginPage /> },
-  { path: '/verify-email', element: <VerifyEmailPage /> },
+  { path: '/login', element: (
+    <AuthLayout
+      align="right"
+      className="max-w-[440px]"
+      branding={
+        <div className="flex items-center gap-4">
+          <img src="/Clinova.png" alt="CLINOVA logo" width="100" height="100" className="h-20 w-20 rounded-full object-contain ring-1 ring-white/20" />
+          <h1 className="text-6xl font-semibold tracking-tight text-white">CLINOVA</h1>
+        </div>
+      }
+      marketing={
+        <>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-100/85">Brokenshire College</p>
+          <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight">Care that keeps<br />your community well.</h1>
+          <p className="mt-3 text-sm leading-6 text-emerald-50/70">A web-based health information management system for private higher education in Davao City.</p>
+        </>
+      }
+    >
+      <LoginPage />
+    </AuthLayout>
+  ) },
+  { path: '/verify-email', element: <AuthLayout className="max-w-[460px]"><VerifyEmailPage /></AuthLayout> },
   {
     element: <ProtectedRoute />,
     children: [

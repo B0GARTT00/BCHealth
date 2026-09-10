@@ -292,6 +292,53 @@ async function seedPatientAndStudentUser(
   });
 }
 
+async function seedFacultyAndStaffUsers(passwordHash: string): Promise<void> {
+  log('Seeding faculty and staff users...');
+
+  const [facultyRole, staffRole] = await Promise.all([
+    prisma.role.findUniqueOrThrow({ where: { name: 'FACULTY_STAFF' } }),
+    prisma.role.findUniqueOrThrow({ where: { name: 'CLINIC_STAFF' } }),
+  ]);
+
+  const faculty = await prisma.patient.upsert({
+    where: { patientNumber: 'FAC-2026-0001' },
+    update: {},
+    create: {
+      patientNumber: 'FAC-2026-0001', type: PatientType.FACULTY,
+      firstName: 'Demo', lastName: 'Faculty', email: 'faculty.demo@brokenshire.edu.ph',
+      birthDate: new Date('1985-03-20'), sex: Sex.FEMALE,
+      employeeProfile: { create: { employeeId: 'FAC-2026-0001', department: 'College of Information Technology', position: 'Instructor' } },
+      emergencyContacts: { create: { name: 'Demo Emergency Contact', relationship: 'Spouse', phone: '+63 900 000 0001' } },
+    },
+  });
+
+  const staff = await prisma.patient.upsert({
+    where: { patientNumber: 'STF-2026-0001' },
+    update: {},
+    create: {
+      patientNumber: 'STF-2026-0001', type: PatientType.STAFF,
+      firstName: 'Demo', lastName: 'Staff', email: 'staff.demo@brokenshire.edu.ph',
+      birthDate: new Date('1990-07-15'), sex: Sex.MALE,
+      employeeProfile: { create: { employeeId: 'STF-2026-0001', department: 'Clinic', position: 'Clinic Staff' } },
+      emergencyContacts: { create: { name: 'Demo Emergency Contact', relationship: 'Parent', phone: '+63 900 000 0002' } },
+    },
+  });
+
+  for (const user of [
+    { email: 'faculty.demo@brokenshire.edu.ph', displayName: 'Demo Faculty Staff', patientId: faculty.id, roleId: facultyRole.id },
+    { email: 'staff.demo@brokenshire.edu.ph', displayName: 'Demo Staff', patientId: staff.id, roleId: staffRole.id },
+  ]) {
+    await prisma.user.upsert({
+      where: { email: user.email },
+      update: { patientId: user.patientId, passwordHash, displayName: user.displayName, emailVerifiedAt: new Date() },
+      create: {
+        email: user.email, passwordHash, displayName: user.displayName, patientId: user.patientId,
+        emailVerifiedAt: new Date(), roles: { create: { roleId: user.roleId } },
+      },
+    });
+  }
+}
+
 async function seedRequirements(academicYearId: string, semesterId: string): Promise<void> {
   log('Seeding health requirements...');
 
@@ -398,6 +445,7 @@ async function main(): Promise<void> {
       passwordHash,
       studentRole.id,
     );
+    await seedFacultyAndStaffUsers(passwordHash);
 
     // 6. Requirements
     await seedRequirements(
