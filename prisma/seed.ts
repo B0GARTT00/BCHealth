@@ -166,7 +166,88 @@ async function main() {
   ] as const;
 
   for (const [id, name, description] of collegeRequirements) {
-    await prisma.healthRequirement.upsert({
+  const facultyStaffRole = await prisma.role.findUniqueOrThrow({ where: { name: 'FACULTY_STAFF' } });
+  const staffRole = await prisma.role.findUniqueOrThrow({ where: { name: 'CLINIC_STAFF' } });
+
+  const facultyPatient = await prisma.patient.upsert({
+    where: { patientNumber: 'FAC-2026-0001' },
+    update: {},
+    create: {
+      patientNumber: 'FAC-2026-0001',
+      type: 'FACULTY',
+      firstName: 'Demo',
+      lastName: 'Faculty',
+      email: 'faculty.demo@brokenshire.edu.ph',
+      birthDate: new Date('1985-03-20'),
+      sex: 'Female',
+      employeeProfile: { create: { employeeId: 'FAC-2026-0001', department: 'College of Information Technology', position: 'Instructor' } },
+      emergencyContacts: { create: { name: 'Demo Emergency Contact', relationship: 'Spouse', phone: '+63 900 000 0001' } },
+    },
+  });
+
+  const staffPatient = await prisma.patient.upsert({
+    where: { patientNumber: 'STF-2026-0001' },
+    update: {},
+    create: {
+      patientNumber: 'STF-2026-0001',
+      type: 'STAFF',
+      firstName: 'Demo',
+      lastName: 'Staff',
+      email: 'staff.demo@brokenshire.edu.ph',
+      birthDate: new Date('1990-07-15'),
+      sex: 'Male',
+      employeeProfile: { create: { employeeId: 'STF-2026-0001', department: 'Clinic', position: 'Clinic Staff' } },
+      emergencyContacts: { create: { name: 'Demo Emergency Contact', relationship: 'Parent', phone: '+63 900 000 0002' } },
+    },
+  });
+
+  const facultyEmail = 'faculty.demo@brokenshire.edu.ph';
+  const linkedFacultyUser = await prisma.user.findUnique({ where: { patientId: facultyPatient.id } });
+  const facultyEmailUser = await prisma.user.findUnique({ where: { email: facultyEmail } });
+  if (linkedFacultyUser && linkedFacultyUser.email !== facultyEmail) {
+    if (facultyEmailUser && facultyEmailUser.id !== linkedFacultyUser.id) {
+      await prisma.user.update({ where: { id: facultyEmailUser.id }, data: { patientId: null } });
+    }
+    await prisma.user.update({ where: { id: linkedFacultyUser.id }, data: { email: facultyEmail } });
+  }
+
+  const staffEmail = 'staff.demo@brokenshire.edu.ph';
+  const linkedStaffUser = await prisma.user.findUnique({ where: { patientId: staffPatient.id } });
+  const staffEmailUser = await prisma.user.findUnique({ where: { email: staffEmail } });
+  if (linkedStaffUser && linkedStaffUser.email !== staffEmail) {
+    if (staffEmailUser && staffEmailUser.id !== linkedStaffUser.id) {
+      await prisma.user.update({ where: { id: staffEmailUser.id }, data: { patientId: null } });
+    }
+    await prisma.user.update({ where: { id: linkedStaffUser.id }, data: { email: staffEmail } });
+  }
+
+  await prisma.user.upsert({
+    where: { email: facultyEmail },
+    update: { patientId: facultyPatient.id, passwordHash, displayName: 'Demo Faculty Staff', emailVerifiedAt: new Date() },
+    create: {
+      email: facultyEmail,
+      passwordHash,
+      displayName: 'Demo Faculty Staff',
+      emailVerifiedAt: new Date(),
+      patientId: facultyPatient.id,
+      roles: { create: { roleId: facultyStaffRole.id } },
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: staffEmail },
+    update: { patientId: staffPatient.id, passwordHash, displayName: 'Demo Staff', emailVerifiedAt: new Date() },
+    create: {
+      email: staffEmail,
+      passwordHash,
+      displayName: 'Demo Staff',
+      emailVerifiedAt: new Date(),
+      patientId: staffPatient.id,
+      roles: { create: { roleId: staffRole.id } },
+    },
+  });
+
+  await prisma.healthRequirement.upsert({
       where: { id },
       update: { name, description, applicableTo: 'COLLEGE', academicYearId: ay.id, semesterId: firstSemester.id },
       create: { id, name, description, applicableTo: 'COLLEGE', academicYearId: ay.id, semesterId: firstSemester.id },

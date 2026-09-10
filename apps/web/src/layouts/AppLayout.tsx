@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Bell, CalendarDays, ClipboardCheck, ClipboardList, LayoutDashboard, LogOut, Package, Search, ShieldCheck, Users, Settings, FileCheck, Syringe, Stethoscope, ClipboardPlus, UserCog, GraduationCap, ScrollText, Megaphone, Inbox } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import type { UserRoleName } from '@bchealth/types';
 
 const navItems = [
   { group: 'Workspace', to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -22,9 +24,80 @@ const navItems = [
   { group: 'Administration', to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
+type Permission =
+  | 'patients.read'
+  | 'patients.manage'
+  | 'clinical.read'
+  | 'clinical.manage'
+  | 'appointments.manage'
+  | 'requirements.manage'
+  | 'clearances.manage'
+  | 'inventory.manage'
+  | 'reports.read'
+  | 'users.manage'
+  | 'roles.manage'
+  | 'audit.read'
+  | 'own_profile.read';
+
+const ROLE_PERMISSIONS: Record<UserRoleName, Permission[]> = {
+  ADMINISTRATOR: ['users.manage', 'roles.manage', 'reports.read', 'audit.read'],
+  CLINIC_NURSE: ['patients.read', 'patients.manage', 'clinical.read', 'clinical.manage', 'appointments.manage', 'requirements.manage', 'clearances.manage', 'inventory.manage', 'reports.read'],
+  DOCTOR: ['patients.read', 'clinical.read', 'clinical.manage'],
+  CLINIC_STAFF: ['patients.read', 'patients.manage', 'appointments.manage', 'requirements.manage', 'clearances.manage'],
+  STUDENT: ['own_profile.read'],
+  FACULTY_STAFF: ['own_profile.read'],
+};
+
+const NAV_PERMISSIONS: Record<string, Permission[]> = {
+  '/dashboard': [],
+  '/patients': ['patients.read'],
+  '/clinic/visits': ['clinical.read'],
+  '/appointments': ['appointments.manage'],
+  '/requirements': ['requirements.manage'],
+  '/clearances': ['clearances.manage'],
+  '/vaccinations': ['clinical.manage'],
+  '/screenings': ['clinical.manage'],
+  '/certificates': ['clinical.manage'],
+  '/inventory/medicines': ['inventory.manage'],
+  '/inventory/dispensing': ['inventory.manage'],
+  '/announcements': [],
+  '/notifications': [],
+  '/admin/users': ['users.manage'],
+  '/admin/academic-years': ['users.manage', 'roles.manage'],
+  '/admin/audit-logs': ['audit.read'],
+  '/admin/settings': ['users.manage', 'roles.manage'],
+};
+
 export function AppLayout() {
   const auth = useAuth();
   const location = useLocation();
+
+  const userPermissions = useMemo(() => {
+    if (!auth.user) return new Set<Permission>();
+    if (auth.user.roles.includes('ADMINISTRATOR')) {
+      return new Set<Permission>(Object.values(NAV_PERMISSIONS).flat());
+    }
+    const perms = new Set<Permission>();
+    for (const role of auth.user.roles) {
+      const rolePerms = ROLE_PERMISSIONS[role];
+      if (rolePerms) rolePerms.forEach(p => perms.add(p));
+    }
+    return perms;
+  }, [auth.user]);
+
+  const visibleNavItems = useMemo(() => {
+    return navItems.filter((item) => {
+      const required = NAV_PERMISSIONS[item.to];
+      if (!required || required.length === 0) return true;
+      return required.every(perm => userPermissions.has(perm));
+    });
+  }, [userPermissions]);
+
+  const visibleGroups = useMemo(() => {
+    const groups = new Set(visibleNavItems.map(item => item.group));
+    return Array.from(groups);
+  }, [visibleNavItems]);
+
   const currentPage = navItems.find((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))?.label ?? (location.pathname.startsWith('/patients/') ? 'Patient Profile' : 'Dashboard');
 
   return (
@@ -38,10 +111,10 @@ export function AppLayout() {
           </div>
         </div>
         <nav className="sidebar-navigation min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-2.5 py-4">
-          {['Workspace', 'Clinic', 'Health records', 'Inventory', 'Insights', 'Communication', 'Administration'].map((group) => (
+          {visibleGroups.map((group) => (
             <div key={group} className="space-y-1">
               <p className="mb-1.5 px-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-50/75">{group}</p>
-              {navItems.filter((item) => item.group === group).map((item) => (
+              {visibleNavItems.filter((item) => item.group === group).map((item) => (
                 <NavLink key={item.to} to={item.to} className={({ isActive }) => `relative flex h-10 items-center gap-3 rounded-lg px-3 text-[13px] font-semibold transition-colors ${isActive ? 'bg-white text-slate-950 shadow-sm before:absolute before:left-0 before:h-5 before:w-0.5 before:rounded-full before:bg-brokenshire-600' : 'text-white/90 hover:bg-white/10 hover:text-white'}`}>
                   <item.icon className="h-4 w-4 shrink-0" />{item.label}
                 </NavLink>

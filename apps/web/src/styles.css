@@ -44,10 +44,10 @@ body {
 button, input, select { font: inherit; }
 
 .login-backdrop {
-  background-image: url('/BCI.png');
-  background-position: center;
-  background-size: cover;
-  filter: saturate(0.78) contrast(1.06);
+  background-image: url('/newBCI.png');
+  background-position: center top;
+  background-size: 100% auto;
+  background-repeat: no-repeat;
 }
 
 .login-scrim {
