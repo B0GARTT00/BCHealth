@@ -1,0 +1,18 @@
+export const ROLES = {
+  ADMINISTRATOR: 'ADMINISTRATOR',
+  CLINIC_NURSE: 'CLINIC_NURSE',
+  DOCTOR: 'DOCTOR',
+  CLINIC_STAFF: 'CLINIC_STAFF',
+  STUDENT: 'STUDENT',
+  FACULTY_STAFF: 'FACULTY_STAFF',
+} as const;
+
+export const PATIENT_TYPES = {
+  STUDENT: 'STUDENT',
+  FACULTY: 'FACULTY',
+  STAFF: 'STAFF',
+} as const;
+
+export const PAGE_SIZE = 20;
+
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';

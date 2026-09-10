@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { cn } from '../../utils/cn';
 
 const variants = {
   success: 'border-success-border bg-success-bg text-success-700',
@@ -9,5 +10,5 @@ const variants = {
 };
 
 export function Badge({ children, variant = 'neutral' }: { children: ReactNode; variant?: keyof typeof variants }) {
-  return <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold ${variants[variant]}`}>{children}</span>;
+  return <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold', variants[variant])}>{children}</span>;
 }
