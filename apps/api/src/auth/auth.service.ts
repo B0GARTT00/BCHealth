@@ -72,6 +72,9 @@ export class AuthService {
     });
 
     if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Invalid credentials.');
+    if (!user.emailVerifiedAt) {
+      throw new UnauthorizedException('Please verify your email before signing in.');
+    }
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
 
@@ -115,16 +118,18 @@ export class AuthService {
     if (!studentRole) throw new ConflictException('Student role is not configured. Run the database seed first.');
 
     try {
+      const verificationToken = randomUUID();
       const user = await this.prisma.user.create({
         data: {
           email: dto.email.toLowerCase(),
           displayName: dto.displayName.trim(),
           passwordHash: await bcrypt.hash(dto.password, 12),
+          emailVerificationTokenHash: this.hashVerificationToken(verificationToken),
+          emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           roles: { create: { roleId: studentRole.id } },
         },
         include: { roles: { include: { role: true } } },
       });
-      const verificationToken = randomUUID();
       await this.prisma.auditLog.create({ data: { action: AuditAction.SIGNUP, entity: 'User', entityId: user.id } });
       const verificationUrl = this.getVerificationUrl(verificationToken);
       await this.sendVerificationEmail(user.email, user.displayName, verificationUrl);
@@ -143,9 +148,38 @@ export class AuthService {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async verifyEmail(_token: string) {
-    throw new UnauthorizedException('Email verification is not yet available.');
+  async verifyEmail(token: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        emailVerificationTokenHash: this.hashVerificationToken(token),
+        emailVerificationExpiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('This activation link is invalid or expired.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerifiedAt: new Date(),
+        emailVerificationTokenHash: null,
+        emailVerificationExpiresAt: null,
+      },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: user.id,
+        action: AuditAction.OTHER,
+        entity: 'User',
+        entityId: user.id,
+        metadata: { event: 'EMAIL_VERIFIED' },
+      },
+    });
+
+    return { message: 'Email verified. You can now sign in.' };
   }
 
   async refresh(refreshToken: string) {

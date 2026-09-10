@@ -4,7 +4,7 @@ CREATE TABLE `User` (
     `email` VARCHAR(191) NOT NULL,
     `passwordHash` VARCHAR(191) NOT NULL,
     `displayName` VARCHAR(191) NOT NULL,
-    `status` ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED') NOT NULL DEFAULT 'ACTIVE',
+    `isActive` BOOLEAN NOT NULL DEFAULT true,
     `patientId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE `RefreshToken` (
 CREATE TABLE `AuditLog` (
     `id` VARCHAR(191) NOT NULL,
     `actorId` VARCHAR(191) NULL,
-    `action` ENUM('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'APPROVE', 'REJECT', 'DISPENSE', 'EXPORT', 'ARCHIVE', 'RESTORE') NOT NULL,
+    `action` VARCHAR(191) NOT NULL,
     `entity` VARCHAR(191) NOT NULL,
     `entityId` VARCHAR(191) NULL,
     `ipAddress` VARCHAR(191) NULL,
@@ -98,7 +98,7 @@ CREATE TABLE `Patient` (
     `email` VARCHAR(191) NULL,
     `phone` VARCHAR(191) NULL,
     `birthDate` DATETIME(3) NULL,
-    `sex` ENUM('MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY') NULL,
+    `sex` VARCHAR(191) NULL,
     `address` VARCHAR(191) NULL,
     `archiveStatus` ENUM('ACTIVE', 'ARCHIVED') NOT NULL DEFAULT 'ACTIVE',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -225,7 +225,6 @@ CREATE TABLE `Semester` (
 CREATE TABLE `ClinicVisit` (
     `id` VARCHAR(191) NOT NULL,
     `patientId` VARCHAR(191) NOT NULL,
-    `clinicianId` VARCHAR(191) NULL,
     `visitDate` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `chiefComplaint` VARCHAR(191) NULL,
     `status` ENUM('OPEN', 'IN_CONSULTATION', 'COMPLETED', 'CANCELLED') NOT NULL DEFAULT 'OPEN',
@@ -243,7 +242,6 @@ CREATE TABLE `ClinicVisit` (
 CREATE TABLE `VitalSign` (
     `id` VARCHAR(191) NOT NULL,
     `clinicVisitId` VARCHAR(191) NOT NULL,
-    `recordedById` VARCHAR(191) NULL,
     `temperatureC` DECIMAL(4, 1) NULL,
     `systolicBp` INTEGER NULL,
     `diastolicBp` INTEGER NULL,
@@ -252,6 +250,7 @@ CREATE TABLE `VitalSign` (
     `oxygenSaturation` INTEGER NULL,
     `heightCm` DECIMAL(5, 2) NULL,
     `weightKg` DECIMAL(5, 2) NULL,
+    `recordedById` VARCHAR(191) NULL,
     `recordedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     PRIMARY KEY (`id`)
@@ -322,15 +321,12 @@ CREATE TABLE `PrescriptionItem` (
 CREATE TABLE `Appointment` (
     `id` VARCHAR(191) NOT NULL,
     `patientId` VARCHAR(191) NOT NULL,
-    `assignedToId` VARCHAR(191) NULL,
     `scheduledAt` DATETIME(3) NOT NULL,
     `durationMins` INTEGER NOT NULL DEFAULT 30,
     `purpose` VARCHAR(191) NOT NULL,
-    `type` ENUM('CONSULTATION', 'FOLLOW_UP', 'VACCINATION', 'SCREENING', 'CLEARANCE', 'OTHER') NOT NULL DEFAULT 'CONSULTATION',
-    `priority` ENUM('ROUTINE', 'URGENT', 'EMERGENCY') NOT NULL DEFAULT 'ROUTINE',
-    `status` ENUM('PENDING', 'APPROVED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED') NOT NULL DEFAULT 'PENDING',
+    `status` ENUM('PENDING', 'APPROVED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW') NOT NULL DEFAULT 'PENDING',
+    `assignedToId` VARCHAR(191) NULL,
     `notes` VARCHAR(191) NULL,
-    `cancellationReason` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -368,8 +364,6 @@ CREATE TABLE `RequirementSubmission` (
     `reviewerId` VARCHAR(191) NULL,
     `expiresAt` DATETIME(3) NULL,
     `notes` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `RequirementSubmission_status_idx`(`status`),
     UNIQUE INDEX `RequirementSubmission_requirementId_patientId_key`(`requirementId`, `patientId`),
@@ -409,8 +403,6 @@ CREATE TABLE `VaccinationRecord` (
     `administeredById` VARCHAR(191) NULL,
     `remarks` VARCHAR(191) NULL,
     `nextDoseAt` DATETIME(3) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `VaccinationRecord_patientId_administeredAt_idx`(`patientId`, `administeredAt`),
     PRIMARY KEY (`id`)
@@ -426,8 +418,6 @@ CREATE TABLE `HealthScreening` (
     `findings` VARCHAR(191) NULL,
     `recommendations` VARCHAR(191) NULL,
     `screenedById` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `HealthScreening_screenedAt_idx`(`screenedAt`),
     PRIMARY KEY (`id`)
@@ -471,7 +461,7 @@ CREATE TABLE `MedicineBatch` (
 CREATE TABLE `InventoryTransaction` (
     `id` VARCHAR(191) NOT NULL,
     `medicineBatchId` VARCHAR(191) NOT NULL,
-    `type` ENUM('STOCK_IN', 'ADJUSTMENT', 'DISPENSE', 'RETURNED', 'EXPIRED', 'DAMAGED', 'LOST') NOT NULL,
+    `type` ENUM('STOCK_IN', 'ADJUSTMENT', 'DISPENSE', 'EXPIRED', 'DAMAGED', 'LOST') NOT NULL,
     `quantity` INTEGER NOT NULL,
     `reason` VARCHAR(191) NULL,
     `actorId` VARCHAR(191) NULL,
@@ -510,15 +500,14 @@ CREATE TABLE `EmergencyCase` (
     `patientId` VARCHAR(191) NOT NULL,
     `clinicVisitId` VARCHAR(191) NULL,
     `occurredAt` DATETIME(3) NOT NULL,
-    `emergencyType` ENUM('ILLNESS', 'INJURY', 'ALLERGIC_REACTION', 'ASTHMA', 'DIABETIC_EMERGENCY', 'OTHER') NOT NULL,
+    `emergencyType` VARCHAR(191) NOT NULL,
     `description` VARCHAR(191) NOT NULL,
     `actionTaken` VARCHAR(191) NOT NULL,
     `treatment` VARCHAR(191) NULL,
-    `disposition` ENUM('DISCHARGED', 'ADMITTED', 'REFERRED', 'TRANSFERRED', 'OBSERVATION') NULL,
+    `disposition` VARCHAR(191) NULL,
     `attendedById` VARCHAR(191) NULL,
     `remarks` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `EmergencyCase_occurredAt_idx`(`occurredAt`),
     PRIMARY KEY (`id`)
@@ -528,7 +517,7 @@ CREATE TABLE `EmergencyCase` (
 CREATE TABLE `MedicalCertificate` (
     `id` VARCHAR(191) NOT NULL,
     `patientId` VARCHAR(191) NOT NULL,
-    `type` ENUM('MEDICAL_CLEARANCE', 'FITNESS_FOR_SCHOOL', 'FITNESS_FOR_WORK', 'VACCINATION_CERTIFICATE', 'MEDICAL_EXEMPTION', 'OTHER') NOT NULL,
+    `type` VARCHAR(191) NOT NULL,
     `purpose` VARCHAR(191) NOT NULL,
     `issuedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `validUntil` DATETIME(3) NULL,
@@ -536,7 +525,6 @@ CREATE TABLE `MedicalCertificate` (
     `remarks` VARCHAR(191) NULL,
     `documentId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `MedicalCertificate_documentId_key`(`documentId`),
     PRIMARY KEY (`id`)
@@ -564,12 +552,12 @@ CREATE TABLE `Notification` (
     `userId` VARCHAR(191) NOT NULL,
     `title` VARCHAR(191) NOT NULL,
     `body` VARCHAR(191) NOT NULL,
-    `type` ENUM('SYSTEM', 'APPOINTMENT', 'REQUIREMENT', 'CLEARANCE', 'ANNOUNCEMENT', 'OTHER') NOT NULL,
-    `status` ENUM('UNREAD', 'READ') NOT NULL DEFAULT 'UNREAD',
+    `type` VARCHAR(191) NOT NULL,
+    `isRead` BOOLEAN NOT NULL DEFAULT false,
     `metadata` JSON NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    INDEX `Notification_userId_status_idx`(`userId`, `status`),
+    INDEX `Notification_userId_isRead_idx`(`userId`, `isRead`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -579,43 +567,12 @@ CREATE TABLE `Announcement` (
     `title` VARCHAR(191) NOT NULL,
     `body` VARCHAR(191) NOT NULL,
     `audience` VARCHAR(191) NOT NULL,
-    `status` ENUM('ACTIVE', 'ARCHIVED') NOT NULL DEFAULT 'ACTIVE',
     `publishedAt` DATETIME(3) NULL,
     `expiresAt` DATETIME(3) NULL,
     `createdById` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Archive` (
-    `id` VARCHAR(191) NOT NULL,
-    `recordType` VARCHAR(191) NOT NULL,
-    `recordId` VARCHAR(191) NOT NULL,
-    `data` JSON NOT NULL,
-    `archivedBy` VARCHAR(191) NULL,
-    `archivedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `restoredAt` DATETIME(3) NULL,
-    `reason` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    INDEX `Archive_recordType_recordId_idx`(`recordType`, `recordId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `SystemSetting` (
-    `id` VARCHAR(191) NOT NULL,
-    `key` VARCHAR(191) NOT NULL,
-    `value` VARCHAR(191) NOT NULL,
-    `category` VARCHAR(191) NULL,
-    `updatedBy` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-
-    UNIQUE INDEX `SystemSetting_key_key`(`key`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -665,19 +622,10 @@ ALTER TABLE `Semester` ADD CONSTRAINT `Semester_academicYearId_fkey` FOREIGN KEY
 ALTER TABLE `ClinicVisit` ADD CONSTRAINT `ClinicVisit_patientId_fkey` FOREIGN KEY (`patientId`) REFERENCES `Patient`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ClinicVisit` ADD CONSTRAINT `ClinicVisit_clinicianId_fkey` FOREIGN KEY (`clinicianId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `VitalSign` ADD CONSTRAINT `VitalSign_clinicVisitId_fkey` FOREIGN KEY (`clinicVisitId`) REFERENCES `ClinicVisit`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `VitalSign` ADD CONSTRAINT `VitalSign_recordedById_fkey` FOREIGN KEY (`recordedById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `Consultation` ADD CONSTRAINT `Consultation_clinicVisitId_fkey` FOREIGN KEY (`clinicVisitId`) REFERENCES `ClinicVisit`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Consultation` ADD CONSTRAINT `Consultation_clinicianId_fkey` FOREIGN KEY (`clinicianId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Diagnosis` ADD CONSTRAINT `Diagnosis_consultationId_fkey` FOREIGN KEY (`consultationId`) REFERENCES `Consultation`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -695,9 +643,6 @@ ALTER TABLE `PrescriptionItem` ADD CONSTRAINT `PrescriptionItem_prescriptionId_f
 ALTER TABLE `Appointment` ADD CONSTRAINT `Appointment_patientId_fkey` FOREIGN KEY (`patientId`) REFERENCES `Patient`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Appointment` ADD CONSTRAINT `Appointment_assignedToId_fkey` FOREIGN KEY (`assignedToId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `HealthRequirement` ADD CONSTRAINT `HealthRequirement_academicYearId_fkey` FOREIGN KEY (`academicYearId`) REFERENCES `AcademicYear`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -713,9 +658,6 @@ ALTER TABLE `RequirementSubmission` ADD CONSTRAINT `RequirementSubmission_patien
 ALTER TABLE `RequirementSubmission` ADD CONSTRAINT `RequirementSubmission_documentId_fkey` FOREIGN KEY (`documentId`) REFERENCES `Document`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `RequirementSubmission` ADD CONSTRAINT `RequirementSubmission_reviewerId_fkey` FOREIGN KEY (`reviewerId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `Clearance` ADD CONSTRAINT `Clearance_patientId_fkey` FOREIGN KEY (`patientId`) REFERENCES `Patient`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -725,19 +667,10 @@ ALTER TABLE `Clearance` ADD CONSTRAINT `Clearance_academicYearId_fkey` FOREIGN K
 ALTER TABLE `Clearance` ADD CONSTRAINT `Clearance_semesterId_fkey` FOREIGN KEY (`semesterId`) REFERENCES `Semester`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Clearance` ADD CONSTRAINT `Clearance_issuedById_fkey` FOREIGN KEY (`issuedById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `VaccinationRecord` ADD CONSTRAINT `VaccinationRecord_patientId_fkey` FOREIGN KEY (`patientId`) REFERENCES `Patient`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `VaccinationRecord` ADD CONSTRAINT `VaccinationRecord_administeredById_fkey` FOREIGN KEY (`administeredById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `HealthScreening` ADD CONSTRAINT `HealthScreening_patientId_fkey` FOREIGN KEY (`patientId`) REFERENCES `Patient`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `HealthScreening` ADD CONSTRAINT `HealthScreening_screenedById_fkey` FOREIGN KEY (`screenedById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `MedicineBatch` ADD CONSTRAINT `MedicineBatch_medicineId_fkey` FOREIGN KEY (`medicineId`) REFERENCES `Medicine`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -746,16 +679,7 @@ ALTER TABLE `MedicineBatch` ADD CONSTRAINT `MedicineBatch_medicineId_fkey` FOREI
 ALTER TABLE `InventoryTransaction` ADD CONSTRAINT `InventoryTransaction_medicineBatchId_fkey` FOREIGN KEY (`medicineBatchId`) REFERENCES `MedicineBatch`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `InventoryTransaction` ADD CONSTRAINT `InventoryTransaction_actorId_fkey` FOREIGN KEY (`actorId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `MedicineDispensation` ADD CONSTRAINT `MedicineDispensation_patientId_fkey` FOREIGN KEY (`patientId`) REFERENCES `Patient`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `MedicineDispensation` ADD CONSTRAINT `MedicineDispensation_clinicVisitId_fkey` FOREIGN KEY (`clinicVisitId`) REFERENCES `ClinicVisit`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `MedicineDispensation` ADD CONSTRAINT `MedicineDispensation_dispensedById_fkey` FOREIGN KEY (`dispensedById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `MedicineDispensationItem` ADD CONSTRAINT `MedicineDispensationItem_dispensationId_fkey` FOREIGN KEY (`dispensationId`) REFERENCES `MedicineDispensation`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -770,13 +694,7 @@ ALTER TABLE `EmergencyCase` ADD CONSTRAINT `EmergencyCase_patientId_fkey` FOREIG
 ALTER TABLE `EmergencyCase` ADD CONSTRAINT `EmergencyCase_clinicVisitId_fkey` FOREIGN KEY (`clinicVisitId`) REFERENCES `ClinicVisit`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `EmergencyCase` ADD CONSTRAINT `EmergencyCase_attendedById_fkey` FOREIGN KEY (`attendedById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `MedicalCertificate` ADD CONSTRAINT `MedicalCertificate_patientId_fkey` FOREIGN KEY (`patientId`) REFERENCES `Patient`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `MedicalCertificate` ADD CONSTRAINT `MedicalCertificate_issuedById_fkey` FOREIGN KEY (`issuedById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `MedicalCertificate` ADD CONSTRAINT `MedicalCertificate_documentId_fkey` FOREIGN KEY (`documentId`) REFERENCES `Document`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -784,14 +702,3 @@ ALTER TABLE `MedicalCertificate` ADD CONSTRAINT `MedicalCertificate_documentId_f
 -- AddForeignKey
 ALTER TABLE `Document` ADD CONSTRAINT `Document_patientId_fkey` FOREIGN KEY (`patientId`) REFERENCES `Patient`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
--- AddForeignKey
-ALTER TABLE `Document` ADD CONSTRAINT `Document_createdById_fkey` FOREIGN KEY (`createdById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Notification` ADD CONSTRAINT `Notification_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Announcement` ADD CONSTRAINT `Announcement_createdById_fkey` FOREIGN KEY (`createdById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Archive` ADD CONSTRAINT `Archive_archivedBy_fkey` FOREIGN KEY (`archivedBy`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

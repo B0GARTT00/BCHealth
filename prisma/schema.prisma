@@ -218,6 +218,8 @@ model User {
   displayName           String
   status                UserStatus              @default(ACTIVE)
   emailVerifiedAt       DateTime?
+  emailVerificationTokenHash String?            @unique
+  emailVerificationExpiresAt DateTime?
   patientId             String?                 @unique
   patient               Patient?                @relation(fields: [patientId], references: [id])
   roles                 UserRole[]

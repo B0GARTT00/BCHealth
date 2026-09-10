@@ -214,6 +214,7 @@ async function seedUsers(
         email: user.email,
         passwordHash,
         displayName: user.displayName,
+        emailVerifiedAt: new Date(),
         roles: {
           create: {
             roleId: user.roleName === 'ADMINISTRATOR' ? adminRoleId : nurseRoleId,
@@ -278,12 +279,14 @@ async function seedPatientAndStudentUser(
       patientId: patient.id,
       passwordHash,
       displayName: 'Demo Student',
+      emailVerifiedAt: new Date(),
     },
     create: {
       email: STUDENT_EMAIL,
       passwordHash,
       displayName: 'Demo Student',
       patientId: patient.id,
+      emailVerifiedAt: new Date(),
       roles: { create: { roleId: studentRoleId } },
     },
   });
@@ -344,14 +347,18 @@ async function seedMedicines(): Promise<void> {
 async function seedAnnouncements(): Promise<void> {
   log('Seeding announcements...');
 
-  await prisma.announcement.create({
-    data: {
-      title: 'Demo Clinic Advisory',
-      body: 'This is seed data for BCHealth demonstrations only.',
-      audience: DEFAULT_AUDIENCE,
-      publishedAt: new Date(),
-    },
-  });
+  const announcement = {
+    title: 'Demo Clinic Advisory',
+    body: 'This is seed data for BCHealth demonstrations only.',
+    audience: DEFAULT_AUDIENCE,
+  };
+
+  const existing = await prisma.announcement.findFirst({ where: announcement });
+  if (!existing) {
+    await prisma.announcement.create({
+      data: { ...announcement, publishedAt: new Date() },
+    });
+  }
 }
 
 // ============================================================================

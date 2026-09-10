@@ -4,7 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { AcademicModule } from './academic/academic.module';
-import { AuditModule } from './modules/audit/audit.module';
+import { AuditModule } from './audit/audit.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { ClearancesModule } from './clearances/clearances.module';
 import { CommunicationsModule } from './communications/communications.module';
@@ -21,8 +21,6 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './modules/users/users.module';
 import { VisitsModule } from './visits/visits.module';
 import configuration from './config/configuration';
-import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 @Module({
   imports: [
@@ -60,8 +58,6 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    GlobalExceptionFilter,
-    ResponseInterceptor,
   ],
 })
 export class AppModule {}

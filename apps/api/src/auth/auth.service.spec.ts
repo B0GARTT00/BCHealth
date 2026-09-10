@@ -11,6 +11,9 @@ const demoUser = {
   passwordHash: 'hash',
   displayName: 'Demo Administrator',
   status: 'ACTIVE',
+  emailVerifiedAt: new Date(),
+  emailVerificationTokenHash: null,
+  emailVerificationExpiresAt: null,
   patientId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -27,6 +30,8 @@ function createService() {
   const prisma = {
     user: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      update: jest.fn(),
     },
     refreshToken: {
       create: jest.fn(),
@@ -111,5 +116,31 @@ describe('AuthService', () => {
       data: { revokedAt: expect.any(Date) },
     });
     expect(prisma.refreshToken.create).toHaveBeenCalled();
+  });
+
+  it('verifies an account and invalidates the verification token', async () => {
+    const { service, prisma } = createService();
+    prisma.user.findFirst.mockResolvedValue(demoUser);
+    prisma.user.update.mockResolvedValue(demoUser);
+    prisma.auditLog.create.mockResolvedValue({});
+
+    await expect(service.verifyEmail('activation-token')).resolves.toEqual({
+      message: 'Email verified. You can now sign in.',
+    });
+
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      where: {
+        emailVerificationTokenHash: expect.any(String),
+        emailVerificationExpiresAt: { gt: expect.any(Date) },
+      },
+    });
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: demoUser.id },
+      data: expect.objectContaining({
+        emailVerifiedAt: expect.any(Date),
+        emailVerificationTokenHash: null,
+        emailVerificationExpiresAt: null,
+      }),
+    });
   });
 });
