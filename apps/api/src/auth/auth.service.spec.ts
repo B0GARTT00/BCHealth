@@ -1,19 +1,19 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import argon2 from 'argon2';
 import bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 
-jest.mock('bcrypt', () => ({ compare: jest.fn() }));
-jest.mock('argon2', () => ({ hash: jest.fn(), verify: jest.fn() }));
+jest.mock('bcrypt', () => ({ compare: jest.fn(), hash: jest.fn() }));
 
 const demoUser = {
   id: 'user-1',
   email: 'admin.demo@brokenshire.edu.ph',
   passwordHash: 'hash',
   displayName: 'Demo Administrator',
-  isActive: true,
+  status: 'ACTIVE',
   emailVerifiedAt: new Date(),
+  emailVerificationTokenHash: null,
+  emailVerificationExpiresAt: null,
   patientId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -24,11 +24,14 @@ const demoUser = {
 const compareMock = bcrypt.compare as jest.MockedFunction<
   (password: string, hash: string) => Promise<boolean>
 >;
+const hashMock = jest.mocked(bcrypt.hash);
 
 function createService() {
   const prisma = {
     user: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      update: jest.fn(),
     },
     refreshToken: {
       create: jest.fn(),
@@ -69,8 +72,7 @@ function createService() {
 describe('AuthService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.mocked(argon2.hash).mockResolvedValue('refresh-hash');
-    jest.mocked(argon2.verify).mockResolvedValue(true);
+    hashMock.mockResolvedValue('hashed-refresh-token' as never);
     compareMock.mockResolvedValue(true);
   });
 
@@ -91,7 +93,7 @@ describe('AuthService', () => {
     });
     expect(prisma.refreshToken.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ tokenHash: 'refresh-hash' }),
+        data: expect.objectContaining({ tokenHash: expect.any(String) }),
       }),
     );
     expect(prisma.auditLog.create).toHaveBeenCalledWith(
@@ -114,5 +116,31 @@ describe('AuthService', () => {
       data: { revokedAt: expect.any(Date) },
     });
     expect(prisma.refreshToken.create).toHaveBeenCalled();
+  });
+
+  it('verifies an account and invalidates the verification token', async () => {
+    const { service, prisma } = createService();
+    prisma.user.findFirst.mockResolvedValue(demoUser);
+    prisma.user.update.mockResolvedValue(demoUser);
+    prisma.auditLog.create.mockResolvedValue({});
+
+    await expect(service.verifyEmail('activation-token')).resolves.toEqual({
+      message: 'Email verified. You can now sign in.',
+    });
+
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      where: {
+        emailVerificationTokenHash: expect.any(String),
+        emailVerificationExpiresAt: { gt: expect.any(Date) },
+      },
+    });
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: demoUser.id },
+      data: expect.objectContaining({
+        emailVerifiedAt: expect.any(Date),
+        emailVerificationTokenHash: null,
+        emailVerificationExpiresAt: null,
+      }),
+    });
   });
 });

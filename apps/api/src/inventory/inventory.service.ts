@@ -1,5 +1,5 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { InventoryTransactionType } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InventoryTransactionType, AuditAction } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMedicineDto, StockInDto } from './dto';
 
@@ -14,7 +14,7 @@ export class InventoryService {
 
   async createMedicine(dto: CreateMedicineDto, actorId: string) {
     const medicine = await this.prisma.medicine.create({ data: dto });
-    await this.audit(actorId, 'MEDICINE_CREATED', medicine.id);
+    await this.audit(actorId, AuditAction.MEDICINE_CREATED, medicine.id);
     return medicine;
   }
 
@@ -30,7 +30,7 @@ export class InventoryService {
       await transaction.inventoryTransaction.create({ data: { medicineBatchId: updated.id, type: InventoryTransactionType.STOCK_IN, quantity: dto.quantity, actorId } });
       return updated;
     });
-    await this.audit(actorId, 'MEDICINE_STOCKED_IN', batch.id);
+    await this.audit(actorId, AuditAction.MEDICINE_STOCKED_IN, batch.id);
     return batch;
   }
 
@@ -38,7 +38,7 @@ export class InventoryService {
     return this.prisma.inventoryTransaction.findMany({ include: { medicineBatch: { include: { medicine: true } } }, orderBy: { createdAt: 'desc' }, take: 100 });
   }
 
-  private audit(actorId: string, action: string, entityId: string) {
+  private audit(actorId: string, action: AuditAction, entityId: string) {
     return this.prisma.auditLog.create({ data: { actorId, action, entity: 'Medicine', entityId } });
   }
 }

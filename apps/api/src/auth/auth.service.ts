@@ -1,15 +1,15 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, RefreshToken, User } from '@prisma/client';
-import argon2 from 'argon2';
+import { Prisma, RefreshToken, User, UserRole, Role, AuditAction } from '@prisma/client';
 import bcrypt from 'bcrypt';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, SignupDto } from './dto';
+import { RegisterDto } from './dto/register.dto';
 
 type AuthUser = User & {
-  roles: { role: { name: string } }[];
+  roles: (UserRole & { role: Role })[];
 };
 
 type JwtPayload = {
@@ -27,22 +27,84 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  async login(dto: LoginDto) {
+  async register(dto: RegisterDto, ipAddress?: string, userAgent?: string) {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (existing) {
+      throw new BadRequestException('Email already in use.');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        passwordHash,
+        displayName: dto.displayName,
+        status: 'ACTIVE',
+      },
+      include: { roles: { include: { role: true } } },
+    }) as AuthUser;
+
+    const session = await this.createSession(user);
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: user.id,
+        action: AuditAction.CREATE,
+        entity: 'User',
+        entityId: user.id,
+        ipAddress,
+        userAgent,
+      },
+    });
+
+    return {
+      ...session,
+      user: this.toSafeUser(user),
+    };
+  }
+
+  async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       include: { roles: { include: { role: true } } },
     });
 
-    if (!user?.isActive) throw new UnauthorizedException('Invalid credentials.');
-    if (!user.emailVerifiedAt) throw new UnauthorizedException('Please verify your email before signing in.');
+    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Invalid credentials.');
+    if (!user.emailVerifiedAt) {
+      throw new UnauthorizedException('Please verify your email before signing in.');
+    }
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!valid) throw new UnauthorizedException('Invalid credentials.');
+
+    if (!valid) {
+      await this.prisma.auditLog.create({
+        data: {
+          actorId: user.id,
+          action: AuditAction.LOGIN_FAILED,
+          entity: 'User',
+          entityId: user.id,
+          ipAddress,
+          userAgent,
+          metadata: { attemptedEmail: dto.email },
+        },
+      });
+
+      throw new UnauthorizedException('Invalid credentials.');
+    }
 
     const session = await this.createSession(user);
 
     await this.prisma.auditLog.create({
-      data: { actorId: user.id, action: 'LOGIN', entity: 'User', entityId: user.id },
+      data: {
+        actorId: user.id,
+        action: AuditAction.LOGIN,
+        entity: 'User',
+        entityId: user.id,
+        ipAddress,
+        userAgent,
+      },
     });
 
     return {
@@ -56,7 +118,7 @@ export class AuthService {
     if (!studentRole) throw new ConflictException('Student role is not configured. Run the database seed first.');
 
     try {
-      const verificationToken = randomBytes(32).toString('hex');
+      const verificationToken = randomUUID();
       const user = await this.prisma.user.create({
         data: {
           email: dto.email.toLowerCase(),
@@ -68,7 +130,7 @@ export class AuthService {
         },
         include: { roles: { include: { role: true } } },
       });
-      await this.prisma.auditLog.create({ data: { action: 'SIGNUP', entity: 'User', entityId: user.id } });
+      await this.prisma.auditLog.create({ data: { action: AuditAction.SIGNUP, entity: 'User', entityId: user.id } });
       const verificationUrl = this.getVerificationUrl(verificationToken);
       await this.sendVerificationEmail(user.email, user.displayName, verificationUrl);
       const isProduction = this.config.get<string>('NODE_ENV') === 'production';
@@ -92,14 +154,31 @@ export class AuthService {
         emailVerificationTokenHash: this.hashVerificationToken(token),
         emailVerificationExpiresAt: { gt: new Date() },
       },
-      include: { roles: { include: { role: true } } },
     });
-    if (!user) throw new UnauthorizedException('This activation link is invalid or expired.');
+
+    if (!user) {
+      throw new UnauthorizedException('This activation link is invalid or expired.');
+    }
+
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { emailVerifiedAt: new Date(), emailVerificationTokenHash: null, emailVerificationExpiresAt: null },
+      data: {
+        emailVerifiedAt: new Date(),
+        emailVerificationTokenHash: null,
+        emailVerificationExpiresAt: null,
+      },
     });
-    await this.prisma.auditLog.create({ data: { actorId: user.id, action: 'EMAIL_VERIFIED', entity: 'User', entityId: user.id } });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: user.id,
+        action: AuditAction.OTHER,
+        entity: 'User',
+        entityId: user.id,
+        metadata: { event: 'EMAIL_VERIFIED' },
+      },
+    });
+
     return { message: 'Email verified. You can now sign in.' };
   }
 
@@ -119,8 +198,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: { roles: { include: { role: true } } },
-    });
-    if (!user?.isActive) throw new UnauthorizedException('Invalid refresh token.');
+    }) as AuthUser | null;
+
+    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Invalid refresh token.');
 
     await this.prisma.refreshToken.update({
       where: { id: storedToken.id },
@@ -133,7 +213,7 @@ export class AuthService {
     };
   }
 
-  async logout(refreshToken?: string, actorId?: string) {
+  async logout(refreshToken?: string, actorId?: string, ipAddress?: string, userAgent?: string) {
     if (refreshToken) {
       const payload = await this.verifyRefreshToken(refreshToken).catch(() => null);
       if (payload) {
@@ -152,7 +232,14 @@ export class AuthService {
 
     if (actorId) {
       await this.prisma.auditLog.create({
-        data: { actorId, action: 'LOGOUT', entity: 'User', entityId: actorId },
+        data: {
+          actorId,
+          action: AuditAction.LOGOUT,
+          entity: 'User',
+          entityId: actorId,
+          ipAddress,
+          userAgent,
+        },
       });
     }
 
@@ -163,8 +250,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { roles: { include: { role: true } } },
-    });
-    if (!user?.isActive) throw new UnauthorizedException('User is inactive.');
+    }) as AuthUser | null;
+
+    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('User is inactive.');
     return this.toSafeUser(user);
   }
 
@@ -183,7 +271,7 @@ export class AuthService {
     await this.prisma.refreshToken.create({
       data: {
         userId: user.id,
-        tokenHash: await argon2.hash(refreshToken),
+        tokenHash: await bcrypt.hash(refreshToken, 12),
         expiresAt: this.getRefreshExpiry(),
       },
     });
@@ -203,7 +291,7 @@ export class AuthService {
 
   private async findMatchingRefreshToken(refreshToken: string, storedTokens: RefreshToken[]) {
     for (const storedToken of storedTokens) {
-      if (await argon2.verify(storedToken.tokenHash, refreshToken)) return storedToken;
+      if (await bcrypt.compare(refreshToken, storedToken.tokenHash)) return storedToken;
     }
     return null;
   }

@@ -11,7 +11,7 @@ export class UsersService {
         id: true,
         email: true,
         displayName: true,
-        isActive: true,
+        status: true,
         patientId: true,
         roles: { select: { role: { select: { name: true } } } },
         createdAt: true,

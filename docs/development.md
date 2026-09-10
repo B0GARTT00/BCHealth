@@ -13,6 +13,7 @@ npm run prisma:migrate
 npm run prisma:seed
 npm run dev --workspace @bchealth/api
 npm run dev --workspace @bchealth/web
+
 ```
 
 ## Implementation Order

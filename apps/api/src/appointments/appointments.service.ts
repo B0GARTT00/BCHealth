@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { AppointmentStatus } from '@prisma/client';
+import { AppointmentStatus, AuditAction } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAppointmentDto } from './dto';
 
@@ -26,7 +26,7 @@ export class AppointmentsService {
       data: { ...dto, patientId: patient.id, scheduledAt },
       include: { patient: true },
     });
-    await this.audit(actorId, 'APPOINTMENT_CREATED', appointment.id);
+    await this.audit(actorId, AuditAction.APPOINTMENT_CREATED, appointment.id);
     return appointment;
   }
 
@@ -43,7 +43,8 @@ export class AppointmentsService {
     const appointment = await this.prisma.appointment.findUnique({ where: { id } });
     if (!appointment) throw new NotFoundException('Appointment not found.');
     const updated = await this.prisma.appointment.update({ where: { id }, data: { status } });
-    await this.audit(actorId, `APPOINTMENT_STATUS_${status}`, id);
+    const statusAction = `APPOINTMENT_STATUS_${status}` as AuditAction;
+    await this.audit(actorId, statusAction, id);
     return updated;
   }
 
@@ -66,11 +67,11 @@ export class AppointmentsService {
       await transaction.appointment.update({ where: { id }, data: { status: AppointmentStatus.COMPLETED } });
       return clinicVisit;
     });
-    await this.audit(actorId, 'APPOINTMENT_CHECKED_IN', id);
+    await this.audit(actorId, AuditAction.APPOINTMENT_CHECKED_IN, id);
     return visit;
   }
 
-  private audit(actorId: string, action: string, appointmentId: string) {
+  private audit(actorId: string, action: AuditAction, appointmentId: string) {
     return this.prisma.auditLog.create({ data: { actorId, action, entity: 'Appointment', entityId: appointmentId } });
   }
 }
