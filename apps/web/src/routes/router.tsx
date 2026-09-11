@@ -34,8 +34,8 @@ export const router = createBrowserRouter([
       className="max-w-[440px]"
       branding={
         <div className="flex items-center gap-4">
-          <img src="/Clinova.png" alt="CLINOVA logo" width="100" height="100" className="h-20 w-20 rounded-full object-contain ring-1 ring-white/20" />
-          <h1 className="text-6xl font-semibold tracking-tight text-white">CLINOVA</h1>
+          <img src="/clinova-emblem.png" alt="CLINICKA emblem" width="100" height="100" className="h-20 w-20 object-contain" />
+          <img src="/clinicka-wordmark.png" alt="CLINICKA" width="300" height="100" className="h-12 w-auto object-contain" />
         </div>
       }
       marketing={

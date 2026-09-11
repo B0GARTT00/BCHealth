@@ -104,9 +104,9 @@ export function AppLayout() {
     <div className="min-h-screen bg-clinic-surface text-clinic-ink">
       <aside className="fixed inset-y-0 left-0 hidden h-screen w-[280px] flex-col bg-[var(--color-sidebar-bg)] text-slate-300 md:flex">
         <div className="flex h-[68px] shrink-0 items-center gap-2.5 border-b border-white/10 px-4">
-          <img src="/Clinova.png" alt="CLINOVA logo" width="34" height="34" className="h-[34px] w-[34px] rounded-full object-contain ring-1 ring-white/20" />
+          <img src="/clinova-emblem.png" alt="CLINICKA emblem" width="34" height="34" className="h-[34px] w-[34px] object-contain" />
           <div>
-            <p className="text-[15px] font-semibold tracking-tight text-white">CLINOVA</p>
+            <img src="/clinicka-wordmark.png" alt="CLINICKA" width="106" height="35" className="h-[20px] w-auto object-contain" />
             <p className="text-[11px] text-slate-400">Health Information Management System</p>
           </div>
         </div>

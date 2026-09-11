@@ -137,7 +137,7 @@ export function LoginPage() {
         </button>
         {!isSignup && <Link className="font-medium text-emerald-100 hover:text-white hover:underline" to="/forgot-password">Forgot your password?</Link>}
       </div>
-      <p className="mt-7 text-center text-[11px] text-emerald-50/50">© 2026 CLINOVA · Private clinic information system</p>
+      <p className="mt-7 text-center text-[11px] text-emerald-50/50">© 2026 CLINICKA · Private clinic information system</p>
     </form>
   );
 }
