@@ -98,7 +98,7 @@ export function AppLayout() {
           <img src="/clinova-emblem.png" alt="CLINICKA emblem" width="58" height="58" className="h-[58px] w-[58px] object-contain" />
           <div className="min-w-0">
             <img src="/clinicka-wordmark.png" alt="CLINICKA" width="142" height="47" className="h-[25px] w-auto max-w-[140px] object-contain" />
-            <p className="mt-1 max-w-[140px] text-[12px] leading-[1.35] text-cyan-50/70">Health Information<br />Management System</p>
+            <p className="mt-1 text-[12px] text-cyan-50/65">Campus Health System</p>
           </div>
           <button type="button" onClick={() => setSidebarOpen(false)} className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-lg text-white/70 hover:bg-white/10 lg:hidden" aria-label="Close navigation">
             <X className="h-5 w-5" />
