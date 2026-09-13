@@ -12,8 +12,8 @@ import { useAuth } from '../hooks/useAuth';
 const navItems = [
   { group: 'Workspace', to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { group: 'Clinic', to: '/patients', label: 'Patients', icon: Users },
-  { group: 'Clinic', to: '/clinic/visits', label: 'Clinic Visits', icon: ClipboardList },
   { group: 'Clinic', to: '/appointments', label: 'Appointments', icon: CalendarDays },
+  { group: 'Clinic', to: '/clinic/visits', label: 'Clinic queue', icon: ClipboardList },
   { group: 'Health records', to: '/requirements', label: 'Requirements', icon: ClipboardPlus },
   { group: 'Health records', to: '/clearances', label: 'Clearances', icon: FileCheck },
   { group: 'Health records', to: '/vaccinations', label: 'Vaccination History', icon: Syringe },
