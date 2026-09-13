@@ -17,7 +17,7 @@ export function VerifyEmailPage() {
       <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-100/75">Account activation</p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">{success ? 'Email verified' : 'Link unavailable'}</h1>
       <p className="mx-auto mt-3 max-w-sm text-[13px] leading-6 text-emerald-50/75">
-        {success ? 'Your CLINICKA account is confirmed and ready to use.' : 'This activation link is invalid or has expired. Request a new signup link to continue.'}
+        {success ? 'Your account has been verified successfully.' : 'This activation link is invalid or has expired. Request a new signup link to continue.'}
       </p>
       <Link to="/login" className="brand-button mx-auto mt-8 inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-[13px] font-semibold text-white">
         {success ? 'Continue to sign in' : 'Return to sign in'} <ArrowRight className="h-4 w-4" />

@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 const loginSchema = z.object({
   email: z.string().email().regex(/^[^@\s]+@brokenshire\.edu\.ph$/i, 'Use your @brokenshire.edu.ph email.'),
   displayName: z.string().optional(),
+  patientType: z.enum(['STUDENT', 'FACULTY', 'STAFF']).optional(),
   password: z.string().min(8),
   confirmPassword: z.string().optional(),
 });
@@ -46,7 +47,7 @@ export function LoginPage() {
           setError('confirmPassword', { message: 'Passwords do not match.' });
           return;
         }
-        const result = await auth.signup(values.email, values.displayName, values.password);
+        const result = await auth.signup(values.email, values.displayName, values.password, values.patientType ?? 'STUDENT');
         setSuccessMessage(result.message);
         setVerificationUrl(result.verificationUrl);
         return;
@@ -74,11 +75,19 @@ export function LoginPage() {
         </div>
       )}
       {isSignup && (
+        <>
         <label className="mt-6 block">
           <span className="mb-2 block text-[12px] font-bold uppercase tracking-[0.12em] text-cyan-50/90">Full name</span>
           <input autoComplete="name" className="login-input h-[52px] w-full rounded-xl px-4 text-[15px] outline-none transition focus:ring-2 focus:ring-cyan-300" {...register('displayName')} />
           {errors.displayName && <span className="text-[12px] text-rose-100">{errors.displayName.message}</span>}
         </label>
+        <label className="mt-5 block">
+          <span className="mb-2 block text-[12px] font-bold uppercase tracking-[0.12em] text-cyan-50/90">Campus affiliation</span>
+          <select defaultValue="STUDENT" className="login-input h-[52px] w-full rounded-xl px-4 text-[15px] outline-none focus:ring-2 focus:ring-cyan-300" {...register('patientType')}>
+            <option value="STUDENT">Student</option><option value="FACULTY">Faculty</option><option value="STAFF">Staff</option>
+          </select>
+        </label>
+        </>
       )}
       <label className="mt-6 block">
         <span className="mb-2 block text-[12px] font-bold uppercase tracking-[0.12em] text-cyan-50/90">Email</span>
